@@ -50,6 +50,11 @@ body {
 	stroke-linecap: round;
 }
 
+body > svg {
+	width: 100%;
+	aspect-ratio: 1 / 0.8660254037844386;
+}
+
 @keyframes rotateTo0 {
 	from {
 		transform: rotate(-60deg);

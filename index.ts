@@ -13,7 +13,7 @@ import { svg as html, SvgComponent } from "./component";
 
 const main = html<SVGSVGElement>`<svg
 	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 1000 1000"
+	viewBox="0 0 1000 866"
 ></svg>`;
 
 const { Hexagon, Grid } = Elements(main);
@@ -21,9 +21,7 @@ const { Hexagon, Grid } = Elements(main);
 const Orientations = [0, 60, 120, 180, 240, 300] as const;
 type Orientation = typeof Orientations[number];
 
-type Unit = 0 | 1;
-type QRS = `${Unit} ${Unit} ${Unit} ${Unit} ${Unit} ${Unit}`;
-const Connections: QRS[] = [
+const Connections = [
 	// q -s r -q s -r
 	"1 0 0 0 0 0", // i
 	"1 1 0 0 0 0", // v
@@ -319,9 +317,10 @@ const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	});
 };
 
+const size = 15;
 const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
 const grid = Grid<GameCell>(
-	14,
+	size,
 	(q, r, s) => {
 		const connection = Connections[Math.floor(random() * Connections.length)]!;
 		const edge = Edge(connection);
@@ -347,7 +346,10 @@ const grid = Grid<GameCell>(
 		}
 	}
 );
-grid.transformWith(main).translate(500, 420).scale(19);
+grid
+	.transformWith(main)
+	.translate(500, 433)
+	.scale(866 / (size * 3 + 2));
 
 main.append(grid.element);
 
