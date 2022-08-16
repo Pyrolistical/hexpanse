@@ -45,8 +45,6 @@ export default (root: SVGSVGElement) => {
       l -0.8660254037844386 -0.5
       z
     "
-			stroke="white"
-			stroke-width=".05"
 		/>`;
 		assertInstanceOf(element, SVGPathElement);
 
