@@ -64,10 +64,12 @@ body > svg {
 		transform: rotate(0);
 	}
 }
+.rotate0 {
+	transform: rotate(0);
+}
 .rotateTo0 {
 	animation-name: rotateTo0;
 	animation-duration: var(--rotatation-speed);
-	animation-fill-mode: forwards;
 }
 
 @keyframes rotateTo60 {
@@ -79,10 +81,12 @@ body > svg {
 		transform: rotate(60deg);
 	}
 }
+.rotate60 {
+	transform: rotate(60deg);
+}
 .rotateTo60 {
 	animation-name: rotateTo60;
 	animation-duration: var(--rotatation-speed);
-	animation-fill-mode: forwards;
 }
 
 @keyframes rotateTo120 {
@@ -94,10 +98,12 @@ body > svg {
 		transform: rotate(120deg);
 	}
 }
+.rotate120 {
+	transform: rotate(120deg);
+}
 .rotateTo120 {
 	animation-name: rotateTo120;
 	animation-duration: var(--rotatation-speed);
-	animation-fill-mode: forwards;
 }
 
 @keyframes rotateTo180 {
@@ -109,10 +115,12 @@ body > svg {
 		transform: rotate(180deg);
 	}
 }
+.rotate180 {
+	transform: rotate(180deg);
+}
 .rotateTo180 {
 	animation-name: rotateTo180;
 	animation-duration: var(--rotatation-speed);
-	animation-fill-mode: forwards;
 }
 
 @keyframes rotateTo240 {
@@ -124,10 +132,12 @@ body > svg {
 		transform: rotate(240deg);
 	}
 }
+.rotate240 {
+	transform: rotate(240deg);
+}
 .rotateTo240 {
 	animation-name: rotateTo240;
 	animation-duration: var(--rotatation-speed);
-	animation-fill-mode: forwards;
 }
 
 @keyframes rotateTo300 {
@@ -139,8 +149,10 @@ body > svg {
 		transform: rotate(300deg);
 	}
 }
+.rotate300 {
+	transform: rotate(300deg);
+}
 .rotateTo300 {
 	animation-name: rotateTo300;
 	animation-duration: var(--rotatation-speed);
-	animation-fill-mode: forwards;
 }

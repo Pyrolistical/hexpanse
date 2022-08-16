@@ -25,19 +25,19 @@ type Orientation = typeof Orientations[number];
 
 const Connections = [
 	// q -s r -q s -r
-	"1 0 0 0 0 0", // i
-	"1 1 0 0 0 0", // v
-	"1 0 1 0 0 0", // c
-	"1 0 0 1 0 0", // l
-	"1 1 1 0 0 0", // e
-	"1 0 1 1 0 0", // y
-	"1 1 0 1 0 0", // λ
-	"1 0 1 0 1 0", // tri
-	"1 1 1 1 0 0", // half
-	"1 0 1 1 1 0", // rake
-	"1 1 0 1 1 0", // x
-	"1 1 1 1 1 0", // hat
-	"1 1 1 1 1 1", // star
+	0b100000, // i
+	0b110000, // v
+	0b101000, // c
+	0b100100, // l
+	0b111000, // e
+	0b101100, // y
+	0b110100, // λ
+	0b101010, // tri
+	0b111100, // half
+	0b101110, // rake
+	0b110110, // x
+	0b111110, // hat
+	0b111111, // star
 ] as const;
 type Connection = typeof Connections[number];
 
@@ -53,11 +53,11 @@ const random = Seedrandom(seed);
 
 const EdgeElement = (connection: Connection): SVGElement => {
 	switch (connection) {
-		case "1 0 0 0 0 0": // i
+		case 0b100000: // i
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 			</g>`;
-		case "1 1 0 0 0 0": // v
+		case 0b110000: // v
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -68,7 +68,7 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					transform="rotate(60)"
 				/>
 			</g>`;
-		case "1 0 1 0 0 0": // c
+		case 0b101000: // c
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -79,7 +79,7 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					transform="rotate(120)"
 				/>
 			</g>`;
-		case "1 0 0 1 0 0": // l
+		case 0b100100: // l
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -90,43 +90,7 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case "1 1 1 0 0 0": // e
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-			</g>`;
-		case "1 0 1 1 0 0": // y
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-			</g>`;
-		case "1 1 0 1 0 0": // λ
+		case 0b111000: // e
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -141,10 +105,46 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					y1="0"
 					x2="0.8660254037844386"
 					y2="0"
+					transform="rotate(120)"
+				/>
+			</g>`;
+		case 0b101100: // y
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case "1 0 1 0 1 0": // tri
+		case 0b110100: // λ
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+			</g>`;
+		case 0b101010: // tri
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -162,7 +162,7 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					transform="rotate(240)"
 				/>
 			</g>`;
-		case "1 1 1 1 0 0": // half
+		case 0b111100: // half
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -187,66 +187,9 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case "1 0 1 1 1 0": // rake
+		case 0b101110: // rake
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case "1 1 0 1 1 0": // x
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case "1 1 1 1 1 0": // hat
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
 				<line
 					x1="0"
 					y1="0"
@@ -269,7 +212,64 @@ const EdgeElement = (connection: Connection): SVGElement => {
 					transform="rotate(240)"
 				/>
 			</g>`;
-		case "1 1 1 1 1 1": // star
+		case 0b110110: // x
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case 0b111110: // hat
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case 0b111111: // star
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -319,7 +319,7 @@ const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	});
 };
 
-const size = 35;
+const size = 16;
 const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
 const grid = Grid<GameCell>(
 	size,
@@ -329,7 +329,7 @@ const grid = Grid<GameCell>(
 		const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
 		const orientation =
 			Orientations[Math.floor(random() * Orientations.length)]!;
-		element.classList.add(`rotateTo${orientation}`);
+		element.classList.add(`rotate${orientation}`);
 		return SvgComponent<GameCell>({
 			element,
 			orientation,
@@ -339,10 +339,11 @@ const grid = Grid<GameCell>(
 	},
 	(cell, event) => {
 		if (event.buttons === 1) {
-			const lastClass = `rotateTo${cell.orientation}`;
-			cell.element.classList.remove(lastClass);
+			cell.element.classList.remove(`rotate${cell.orientation}`);
+			cell.element.classList.remove(`rotateTo${cell.orientation}`);
 			cell.orientation += 60;
 			cell.orientation %= 360;
+			cell.element.classList.add(`rotate${cell.orientation}`);
 			cell.element.classList.add(`rotateTo${cell.orientation}`);
 			validate(grid, cell);
 		}
