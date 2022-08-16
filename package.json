@@ -1,0 +1,28 @@
+{
+  "name": "hexpanse",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "test": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pyrolistical/hexpanse.git"
+  },
+  "author": "Ronald Chen <pyrogx1133@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Pyrolistical/hexpanse/issues"
+  },
+  "homepage": "https://github.com/Pyrolistical/hexpanse#readme",
+  "dependencies": {
+    "core-js": "3.24.1",
+    "sanitize.css": "13.0.0"
+  },
+  "devDependencies": {
+    "prettier": "2.7.1",
+    "vite": "3.0.7",
+    "vitest": "0.21.1"
+  }
+}
