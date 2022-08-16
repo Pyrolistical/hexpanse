@@ -7,7 +7,7 @@ import "./polyfill.js";
 
 import Seedrandom from "seedrandom";
 
-import Elements, { Cell } from "./elements";
+import Elements, { Grid, Cell } from "./elements";
 
 import { svg as html, SvgComponent } from "./component";
 
@@ -21,39 +21,43 @@ const { Hexagon, Grid } = Elements(main);
 const Orientations = [0, 60, 120, 180, 240, 300] as const;
 type Orientation = typeof Orientations[number];
 
-const Topologies = [
-	"edge",
-	"edge edge",
-	"edge gap edge",
-	"edge gap gap edge",
-	"edge edge edge",
-	"edge gap edge edge",
-	"edge edge gap edge",
-	"edge gap edge gap edge",
-	"edge edge edge edge",
-	"edge gap edge edge edge",
-	"edge edge gap edge edge",
-	"edge edge edge edge edge",
-	"edge edge edge edge edge edge",
+type Unit = 0 | 1;
+type QRS = `${Unit} ${Unit} ${Unit} ${Unit} ${Unit} ${Unit}`;
+const Connections: QRS[] = [
+	// q -s r -q s -r
+	"1 0 0 0 0 0", // i
+	"1 1 0 0 0 0", // v
+	"1 0 1 0 0 0", // c
+	"1 0 0 1 0 0", // l
+	"1 1 1 0 0 0", // e
+	"1 0 1 1 0 0", // y
+	"1 1 0 1 0 0", // λ
+	"1 0 1 0 1 0", // tri
+	"1 1 1 1 0 0", // half
+	"1 0 1 1 1 0", // rake
+	"1 1 0 1 1 0", // x
+	"1 1 1 1 1 0", // hat
+	"1 1 1 1 1 1", // star
 ] as const;
-type Topology = typeof Topologies[number];
+type Connection = typeof Connections[number];
 
-type RotatingCell = Cell & {
+type GameCell = Cell & {
 	orientation: Orientation;
-	topology: Topology;
+	connection: Connection;
+	valid: boolean;
 };
 
 const seed = "1133";
 
 const random = Seedrandom(seed);
 
-const EdgeElement = (topology: Topology): SVGElement => {
-	switch (topology) {
-		case "edge":
+const EdgeElement = (connection: Connection): SVGElement => {
+	switch (connection) {
+		case "1 0 0 0 0 0": // i
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 			</g>`;
-		case "edge edge":
+		case "1 1 0 0 0 0": // v
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -64,7 +68,7 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					transform="rotate(60)"
 				/>
 			</g>`;
-		case "edge gap edge":
+		case "1 0 1 0 0 0": // c
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -75,7 +79,7 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					transform="rotate(120)"
 				/>
 			</g>`;
-		case "edge gap gap edge":
+		case "1 0 0 1 0 0": // l
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -86,43 +90,7 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case "edge edge edge":
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-			</g>`;
-		case "edge gap edge edge":
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-			</g>`;
-		case "edge edge gap edge":
+		case "1 1 1 0 0 0": // e
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -137,10 +105,46 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					y1="0"
 					x2="0.8660254037844386"
 					y2="0"
+					transform="rotate(120)"
+				/>
+			</g>`;
+		case "1 0 1 1 0 0": // y
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case "edge gap edge gap edge":
+		case "1 1 0 1 0 0": // λ
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+			</g>`;
+		case "1 0 1 0 1 0": // tri
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -158,7 +162,7 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					transform="rotate(240)"
 				/>
 			</g>`;
-		case "edge edge edge edge":
+		case "1 1 1 1 0 0": // half
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -183,66 +187,9 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case "edge gap edge edge edge":
+		case "1 0 1 1 1 0": // rake
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case "edge edge gap edge edge":
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case "edge edge edge edge edge":
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
 				<line
 					x1="0"
 					y1="0"
@@ -265,7 +212,64 @@ const EdgeElement = (topology: Topology): SVGElement => {
 					transform="rotate(240)"
 				/>
 			</g>`;
-		case "edge edge edge edge edge edge":
+		case "1 1 0 1 1 0": // x
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case "1 1 1 1 1 0": // hat
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case "1 1 1 1 1 1": // star
 			return html`<g>
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 				<line
@@ -305,29 +309,31 @@ const EdgeElement = (topology: Topology): SVGElement => {
 				/>
 			</g>`;
 		default:
-			throw new Error(`unhandled topology ${topology}`);
+			throw new Error(`unhandled connection ${connection}`);
 	}
 };
-const Edge = (topology: Topology): SvgComponent<SVGGElement> => {
-	const element = EdgeElement(topology);
+const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
+	const element = EdgeElement(connection);
 	return SvgComponent({
 		element,
 	});
 };
 
-const grid = Grid<RotatingCell>(
-	5,
+const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
+const grid = Grid<GameCell>(
+	14,
 	(q, r, s) => {
-		const topology = Topologies[Math.floor(random() * Topologies.length)]!;
-		const edge = Edge(topology);
+		const connection = Connections[Math.floor(random() * Connections.length)]!;
+		const edge = Edge(connection);
 		const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
 		const orientation =
 			Orientations[Math.floor(random() * Orientations.length)]!;
 		element.classList.add(`rotateTo${orientation}`);
-		return SvgComponent<RotatingCell>({
+		return SvgComponent<GameCell>({
 			element,
 			orientation,
-			topology,
+			connection,
+			valid: false,
 		});
 	},
 	(cell, event) => {
@@ -337,10 +343,11 @@ const grid = Grid<RotatingCell>(
 			cell.orientation += 60;
 			cell.orientation %= 360;
 			cell.element.classList.add(`rotateTo${cell.orientation}`);
+			validate(grid, cell);
 		}
 	}
 );
-grid.transformWith(main).translate(400, 350).scale(40);
+grid.transformWith(main).translate(500, 420).scale(19);
 
 main.append(grid.element);
 

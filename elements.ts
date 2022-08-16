@@ -20,9 +20,9 @@ type CellRef<E extends Cell> = {
 	cell: E;
 };
 
-type Cells = Record<Coordinate, Cell>;
-type Grid = SvgComponent<SVGGElement> & {
-	cells: Cells;
+type Cells<T extends Cell> = Record<Coordinate, T>;
+export type Grid<T extends Cell> = SvgComponent<SVGGElement> & {
+	cells: Cells<T>;
 };
 
 export default (root: SVGSVGElement) => {
@@ -63,19 +63,19 @@ export default (root: SVGSVGElement) => {
 			element,
 		}) as SvgComponent<SVGGElement>;
 	};
-	const Grid = <E extends Cell>(
+	const Grid = <T extends Cell>(
 		size: number,
-		createCell: (q: number, r: number, s: number) => E,
-		onCellSelected: (cell: E, event: PointerEvent) => void
-	): Grid => {
-		const Cell = (q: number, r: number, s: number): Cell => {
+		createCell: (q: number, r: number, s: number) => T,
+		onCellSelected: (cell: T, event: PointerEvent) => void
+	): Grid<T> => {
+		const Cell = (q: number, r: number, s: number): T => {
 			const cell = createCell(q, r, s);
 			Object.assign(cell.element, { [celly]: true, cell });
 			Object.assign(cell, { q, r, s });
 			return cell;
 		};
 
-		const cells: Cells = {};
+		const cells: Cells<T> = {};
 		for (let q = -size; q <= size; q++) {
 			for (let r = -size; r <= size; r++) {
 				const s = -q - r;
@@ -99,14 +99,14 @@ export default (root: SVGSVGElement) => {
 		const element = html`<g>${positionedCells}</g>`;
 		element.addEventListener("pointerdown", (event) => {
 			for (const hit of event.composedPath()) {
-				if (isCell<E>(hit)) {
+				if (isCell<T>(hit)) {
 					return onCellSelected(hit.cell, event);
 				}
 			}
 		});
 		assertInstanceOf(element, SVGGElement);
 
-		return SvgComponent<Grid>({
+		return SvgComponent<Grid<T>>({
 			element,
 			cells,
 		});
