@@ -11,9 +11,11 @@ import Elements, { Grid, Cell } from "./elements";
 
 import { svg as html, SvgComponent } from "./component";
 
+const width = 1000;
+const height = width * 0.8660254037844386;
 const main = html<SVGSVGElement>`<svg
 	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 1000 866"
+	viewBox="0 0 ${width} ${height}"
 ></svg>`;
 
 const { Hexagon, Grid } = Elements(main);
@@ -317,7 +319,7 @@ const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	});
 };
 
-const size = 15;
+const size = 35;
 const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
 const grid = Grid<GameCell>(
 	size,
@@ -348,8 +350,8 @@ const grid = Grid<GameCell>(
 );
 grid
 	.transformWith(main)
-	.translate(500, 433)
-	.scale(866 / (size * 3 + 2));
+	.translate(width / 2, height / 2)
+	.scale(height / (size * 3 + 2));
 
 main.append(grid.element);
 
