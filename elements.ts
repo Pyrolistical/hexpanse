@@ -4,10 +4,17 @@ import { SvgComponent, svg as html } from "./component";
 
 type Axis = number;
 
-type Q = Axis;
-type R = Axis;
-type S = Axis;
-type Coordinate = `${Q} ${R} ${S}`;
+export type Q = Axis;
+export type R = Axis;
+export type S = Axis;
+export type Coordinate = {
+	q: Q;
+	r: R;
+	s: S;
+};
+export type CoordinateKey = `${Q} ${R} ${S}`;
+export const asCoordinateKey = ({ q, r, s }: Coordinate): CoordinateKey =>
+	`${q} ${r} ${s}`;
 const celly = Symbol("celly");
 export type Cell = SvgComponent<SVGElement> & {
 	q: Q;
@@ -20,7 +27,7 @@ type CellRef<E extends Cell> = {
 	cell: E;
 };
 
-type Cells<T extends Cell> = Record<Coordinate, T>;
+export type Cells<T extends Cell> = Record<CoordinateKey, T>;
 export type Grid<T extends Cell> = SvgComponent<SVGGElement> & {
 	cells: Cells<T>;
 };
@@ -64,28 +71,11 @@ export default (root: SVGSVGElement) => {
 		}) as SvgComponent<SVGGElement>;
 	};
 	const Grid = <T extends Cell>(
-		size: number,
-		createCell: (q: number, r: number, s: number) => T,
+		cells: Cells<T>,
 		onCellSelected: (cell: T, event: PointerEvent) => void
 	): Grid<T> => {
-		const Cell = (q: number, r: number, s: number): T => {
-			const cell = createCell(q, r, s);
-			Object.assign(cell.element, { [celly]: true, cell });
-			Object.assign(cell, { q, r, s });
-			return cell;
-		};
-
-		const cells: Cells<T> = {};
-		for (let q = -size; q <= size; q++) {
-			for (let r = -size; r <= size; r++) {
-				const s = -q - r;
-				if (-size <= s && s <= size) {
-					const cell = Cell(q, r, s);
-					cells[`${q} ${r} ${s}`] = cell;
-				}
-			}
-		}
 		const positionedCells = Object.values(cells).map((cell) => {
+			Object.assign(cell.element, { [celly]: true, cell });
 			const g = G();
 			// Q basis [Math.sqrt(3), 0]
 			// R basis [Math.sqrt(3) / 2, 3 / 2]
