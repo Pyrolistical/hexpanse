@@ -158,6 +158,27 @@ function* PartitionNeighbours(
 	}
 }
 
+const asConnections = (
+	direction: Direction
+): {
+	forwards: Connection;
+	backwards: Connection;
+} => {
+	return {
+		forwards: (0b100000 >> direction) as Connection,
+		backwards: (0b100000 >> (direction + 3) % 6) as Connection,
+	};
+};
+
+const addConnection = (
+	solution: Record<CoordinateKey, number>,
+	key: CoordinateKey,
+	connection: Connection
+) => {
+	solution[key] ??= 0;
+	solution[key] |= connection;
+};
+
 type Solution = { coordinate: Coordinate; connection: Connection };
 // https://en.wikipedia.org/wiki/Prim%27s_algorithm
 export default function* (
@@ -179,28 +200,27 @@ export default function* (
 		if (working.size === 0) {
 			throw new Error("working set unexpectedly empty");
 		}
-		const cellKey = chooseOne(working);
-		const cell = working.get(cellKey)!;
-		const neighbours = [...PartitionNeighbours(size, cell, visited)];
+		const workingKey = chooseOne(working);
+		const neighbours = [
+			...PartitionNeighbours(size, working.get(workingKey)!, visited),
+		];
 		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
 		const {
-			neighbour: { coordinate, direction },
+			neighbour: { coordinate: neighbourCoordinate, direction },
 		} = chooseOne(connectedNeighbours);
 
-		const connectedNeighbourKey = asCoordinateKey(coordinate);
-		solution[connectedNeighbourKey] ??= 0;
-		solution[connectedNeighbourKey] |= 0b100000 >> (direction + 3) % 6;
+		const { forwards, backwards } = asConnections(direction);
+		addConnection(solution, workingKey, forwards);
+		const neighbourKey = asCoordinateKey(neighbourCoordinate);
+		addConnection(solution, neighbourKey, backwards);
 
-		solution[cellKey] ??= 0;
-		solution[cellKey] |= 0b100000 >> direction;
-
-		visited.add(cellKey);
+		visited.add(workingKey);
 		for (const {
 			neighbour: { coordinate },
 		} of neighbours.filter(({ connected }) => !connected)) {
 			working.set(asCoordinateKey(coordinate), coordinate);
 		}
-		working.delete(cellKey);
+		working.delete(workingKey);
 	}
 
 	for (const coordinate of coordinates) {

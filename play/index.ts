@@ -26,7 +26,7 @@ const main = Main([width, height]);
 
 const unseeded = Random();
 
-const size = 15;
+const size = 1;
 
 const validate = (grid: Grid, cell: Cell) => {};
 
