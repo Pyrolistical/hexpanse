@@ -8,7 +8,7 @@ import "../polyfill.js";
 import { v4 as uuid } from "uuid";
 import Seedrandom from "seedrandom";
 
-import { Main, Grid, Cell, Cells } from "./elements";
+import { Main, Grid, asCoordinateKey, Cell, Cells } from "./elements";
 
 import { html } from "./component";
 import PuzzleGenerator from "./puzzle-generator";
@@ -33,13 +33,10 @@ if (window.location.hash === "") {
 const puzzleRandom = Seedrandom(seed);
 
 const cells: Cells = {};
-for (const {
-	coordinate: { q, r, s },
-	connection,
-} of PuzzleGenerator(size, puzzleRandom)) {
-	const cell = Cell(unseeded, q, r, s, connection);
+for (const { coordinate, connection } of PuzzleGenerator(size, puzzleRandom)) {
+	const cell = Cell(unseeded, coordinate, connection);
 
-	cells[`${q} ${r} ${s}`] = cell;
+	cells[asCoordinateKey(coordinate)] = cell;
 }
 const grid = Grid(main.element, cells, (cell, event) => {
 	if (event.buttons === 1) {

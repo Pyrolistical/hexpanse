@@ -17,9 +17,7 @@ export const asCoordinateKey = ({ q, r, s }: Coordinate): CoordinateKey =>
 	`${q} ${r} ${s}`;
 const celly = Symbol("celly");
 export type Cell = SvgComponent<SVGElement> & {
-	q: Q;
-	r: R;
-	s: S;
+	coordinate: Coordinate;
 	orientation: Orientation;
 	connection: Connection;
 	valid: boolean;
@@ -80,11 +78,15 @@ export const Grid = (
 	const positionedCells = Object.values(cells).map((cell) => {
 		Object.assign(cell.element, { [celly]: true, cell });
 		const g = G();
+
+		const {
+			coordinate: { q, r },
+		} = cell;
 		// Q basis [Math.sqrt(3), 0]
 		// R basis [Math.sqrt(3) / 2, 3 / 2]
 		// [x, y] = Q basis * q + R basis * r
-		const x = Math.sqrt(3) * cell.q + (Math.sqrt(3) / 2) * cell.r;
-		const y = (3 / 2) * cell.r;
+		const x = Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r;
+		const y = (3 / 2) * r;
 		g.transformWith(root).translate(x, y);
 		cell.appendTo(g.element);
 		return g;
@@ -421,9 +423,7 @@ export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 
 export const Cell = (
 	random: () => number,
-	q: number,
-	r: number,
-	s: number,
+	coordinate: Coordinate,
 	connection: Connection
 ): Cell => {
 	const edge = Edge(connection);
@@ -435,8 +435,6 @@ export const Cell = (
 		orientation,
 		connection,
 		valid: false,
-		q,
-		r,
-		s,
+		coordinate,
 	});
 };

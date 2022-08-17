@@ -5,7 +5,7 @@ import {
 	Connection,
 } from "./elements";
 
-const normalizeConnections = (connection: number): Connection => {
+const normalizeConnection = (connection: number): Connection => {
 	if (connection === 0) {
 		throw new Error("connection cannot be empty");
 	}
@@ -69,61 +69,41 @@ const normalizeConnections = (connection: number): Connection => {
 };
 
 type Direction = 0 | 1 | 2 | 3 | 4 | 5;
-function* Neighbours({ q, r, s }: Coordinate): Generator<
-	Coordinate & {
-		direction: Direction;
-	},
-	any,
-	any
-> {
+type Neighbour = { coordinate: Coordinate; direction: Direction };
+function* Neighbours({ q, r, s }: Coordinate): Generator<Neighbour, any, any> {
 	yield {
-		q,
-		r: r - 1,
-		s: s + 1,
+		coordinate: { q, r: r - 1, s: s + 1 },
 		direction: 0,
 	};
 	yield {
-		q: q + 1,
-		r: r - 1,
-		s,
+		coordinate: { q: q + 1, r: r - 1, s },
 		direction: 1,
 	};
 	yield {
-		q: q + 1,
-		r,
-		s: s - 1,
+		coordinate: { q: q + 1, r, s: s - 1 },
 		direction: 2,
 	};
 	yield {
-		q,
-		r: r + 1,
-		s: s - 1,
+		coordinate: { q, r: r + 1, s: s - 1 },
 		direction: 3,
 	};
 	yield {
-		q: q - 1,
-		r: r + 1,
-		s,
+		coordinate: { q: q - 1, r: r + 1, s },
 		direction: 4,
 	};
 	yield {
-		q: q - 1,
-		r,
-		s: s + 1,
+		coordinate: { q: q - 1, r, s: s + 1 },
 		direction: 5,
 	};
 }
 function* ValidNeighbours(
 	size: number,
 	coordinate: Coordinate
-): Generator<
-	Coordinate & {
-		direction: Direction;
-	},
-	any,
-	any
-> {
-	for (const { q, r, s, direction } of Neighbours(coordinate)) {
+): Generator<Neighbour, any, any> {
+	for (const { coordinate: neighbourCoordinate, direction } of Neighbours(
+		coordinate
+	)) {
+		const { q, r, s } = neighbourCoordinate;
 		if (q < -size || q > size) {
 			continue;
 		}
@@ -133,7 +113,7 @@ function* ValidNeighbours(
 		if (s < -size || s > size) {
 			continue;
 		}
-		yield { q, r, s, direction };
+		yield { coordinate: neighbourCoordinate, direction };
 	}
 }
 
@@ -159,33 +139,34 @@ function* CoordinatesGenerator(size: number): Generator<Coordinate, any, any> {
 		}
 	}
 }
-type Solution = { coordinate: Coordinate; connection: Connection };
-type ConnectedNeighbour = { coordinate: Coordinate; direction: Direction };
-function* ConnectedNeighbours(
+
+type ConnectableNeighbour = { neighbour: Neighbour; connected: boolean };
+function* PartitionNeighbours(
 	size: number,
 	cell: Coordinate,
 	connected: Set<CoordinateKey>
-): Generator<ConnectedNeighbour, any, any> {
-	for (const { q, r, s, direction } of ValidNeighbours(size, cell)) {
-		if (connected.has(asCoordinateKey({ q, r, s }))) {
-			yield { coordinate: { q, r, s }, direction };
-		}
+): Generator<ConnectableNeighbour, any, any> {
+	for (const neighbour of ValidNeighbours(size, cell)) {
+		const { coordinate } = neighbour;
+		yield { neighbour, connected: connected.has(asCoordinateKey(coordinate)) };
 	}
 }
 
+type Solution = { coordinate: Coordinate; connection: Connection };
+// https://en.wikipedia.org/wiki/Prim%27s_algorithm
 export default function* (
 	size: number,
 	random: () => number
 ): Generator<Solution, any, any> {
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
 	const solutionTree: Record<CoordinateKey, number> = {};
-
 	const connected = new Set<CoordinateKey>();
 	const working = new Map<CoordinateKey, Coordinate>();
+
 	const start = coordinates[Math.floor(random() * coordinates.length)]!;
 	connected.add(asCoordinateKey(start));
-	for (const { q, r, s } of ValidNeighbours(size, start)) {
-		working.set(asCoordinateKey({ q, r, s }), { q, r, s });
+	for (const { coordinate } of ValidNeighbours(size, start)) {
+		working.set(asCoordinateKey(coordinate), coordinate);
 	}
 
 	while (connected.size < coordinates.length) {
@@ -195,13 +176,13 @@ export default function* (
 		const workingIndex = Math.floor(random() * working.size);
 		const { value: cellKey } = skip(workingIndex, working.keys());
 		const cell = working.get(cellKey)!;
-		const connectedNeighbours = [...ConnectedNeighbours(size, cell, connected)];
+		const neighbours = [...PartitionNeighbours(size, cell, connected)];
+		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
 		const {
-			coordinate: { q, r, s },
-			direction,
+			neighbour: { coordinate, direction },
 		} = connectedNeighbours[Math.floor(random() * connectedNeighbours.length)]!;
 
-		const connectedNeighbourKey = asCoordinateKey({ q, r, s });
+		const connectedNeighbourKey = asCoordinateKey(coordinate);
 		solutionTree[connectedNeighbourKey] ??= 0;
 		solutionTree[connectedNeighbourKey] |= 0b100000 >> (direction + 3) % 6;
 
@@ -209,21 +190,20 @@ export default function* (
 		solutionTree[cellKey] |= 0b100000 >> direction;
 
 		connected.add(cellKey);
-		for (const { q, r, s } of ValidNeighbours(size, cell)) {
-			const nextKey = asCoordinateKey({ q, r, s });
-			if (connected.has(nextKey)) {
-				continue;
-			}
-			working.set(nextKey, { q, r, s });
+		for (const {
+			neighbour: { coordinate },
+		} of neighbours.filter(({ connected }) => !connected)) {
+			working.set(asCoordinateKey(coordinate), coordinate);
 		}
 		working.delete(cellKey);
 	}
 
-	for (const { q, r, s } of coordinates) {
-		const solution = solutionTree[asCoordinateKey({ q, r, s })]!;
+	for (const coordinate of coordinates) {
+		const solution = solutionTree[asCoordinateKey(coordinate)]!;
+		const connection = normalizeConnection(solution);
 		yield {
-			coordinate: { q, r, s },
-			connection: normalizeConnections(solution),
+			coordinate,
+			connection,
 		};
 	}
 }
