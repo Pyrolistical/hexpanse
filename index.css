@@ -44,6 +44,10 @@ body {
 	stroke-width: 0.05;
 }
 
+.cell circle {
+	fill: var(--background);
+}
+
 .cell line {
 	stroke: var(--cell-foreground);
 	stroke-width: 0.25;

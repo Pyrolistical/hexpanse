@@ -132,6 +132,7 @@ const EdgeElement = (connection: Connection): SVGElement => {
 	switch (connection) {
 		case 0b100000: // i
 			return html`<g>
+				<circle r=".25" />
 				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
 			</g>`;
 		case 0b110000: // v
@@ -396,7 +397,7 @@ const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	});
 };
 
-const size = 5;
+const size = 7;
 
 const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
 
