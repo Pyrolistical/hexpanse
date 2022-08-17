@@ -1,6 +1,7 @@
 import { assertInstanceOf } from "../assert";
 
 import { SvgComponent, svg as html } from "./component";
+import { ChooseOne } from "./random";
 
 type Axis = number;
 
@@ -422,13 +423,13 @@ export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 };
 
 export const Cell = (
-	random: () => number,
+	chooseOne: ChooseOne,
 	coordinate: Coordinate,
 	connection: Connection
 ): Cell => {
 	const edge = Edge(connection);
 	const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
-	const orientation = Orientations[Math.floor(random() * Orientations.length)]!;
+	const orientation = chooseOne(Orientations);
 	element.classList.add(`rotate${orientation}`);
 	return SvgComponent<Cell>({
 		element,

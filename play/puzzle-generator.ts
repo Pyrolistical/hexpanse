@@ -5,6 +5,8 @@ import {
 	Connection,
 } from "./elements";
 
+import { ChooseOne } from "./random";
+
 const normalizeConnection = (connection: number): Connection => {
 	if (connection === 0) {
 		throw new Error("connection cannot be empty");
@@ -117,14 +119,6 @@ function* ValidNeighbours(
 	}
 }
 
-function skip<T>(n: number, iterator: IterableIterator<T>): IteratorResult<T> {
-	let cursor: IteratorResult<T> = iterator.next();
-	while (n-- > 0) {
-		cursor = iterator.next();
-	}
-	return cursor!;
-}
-
 function* CoordinatesGenerator(size: number): Generator<Coordinate, any, any> {
 	for (let q = -size; q <= size; q++) {
 		for (let r = -size; r <= size; r++) {
@@ -156,14 +150,14 @@ type Solution = { coordinate: Coordinate; connection: Connection };
 // https://en.wikipedia.org/wiki/Prim%27s_algorithm
 export default function* (
 	size: number,
-	random: () => number
+	chooseOne: ChooseOne
 ): Generator<Solution, any, any> {
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
 	const solutionTree: Record<CoordinateKey, number> = {};
 	const connected = new Set<CoordinateKey>();
 	const working = new Map<CoordinateKey, Coordinate>();
 
-	const start = coordinates[Math.floor(random() * coordinates.length)]!;
+	const start = chooseOne(coordinates);
 	connected.add(asCoordinateKey(start));
 	for (const { coordinate } of ValidNeighbours(size, start)) {
 		working.set(asCoordinateKey(coordinate), coordinate);
@@ -173,14 +167,13 @@ export default function* (
 		if (working.size === 0) {
 			throw new Error("working set unexpectedly empty");
 		}
-		const workingIndex = Math.floor(random() * working.size);
-		const { value: cellKey } = skip(workingIndex, working.keys());
+		const cellKey = chooseOne(working);
 		const cell = working.get(cellKey)!;
 		const neighbours = [...PartitionNeighbours(size, cell, connected)];
 		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
 		const {
 			neighbour: { coordinate, direction },
-		} = connectedNeighbours[Math.floor(random() * connectedNeighbours.length)]!;
+		} = chooseOne(connectedNeighbours);
 
 		const connectedNeighbourKey = asCoordinateKey(coordinate);
 		solutionTree[connectedNeighbourKey] ??= 0;

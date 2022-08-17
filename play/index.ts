@@ -6,7 +6,7 @@ import "./index.css";
 import "../polyfill.js";
 
 import { v4 as uuid } from "uuid";
-import Seedrandom from "seedrandom";
+import Random from "./random";
 
 import { Main, Grid, asCoordinateKey, Cell, Cells } from "./elements";
 
@@ -17,7 +17,7 @@ const width = 1000;
 const height = (width * Math.sqrt(3)) / 2;
 const main = Main([width, height]);
 
-const unseeded = Seedrandom();
+const unseeded = Random();
 
 const size = 15;
 
@@ -30,7 +30,7 @@ if (window.location.hash === "") {
 } else {
 	seed = window.location.hash.substring(1);
 }
-const puzzleRandom = Seedrandom(seed);
+const puzzleRandom = Random(seed);
 
 const cells: Cells = {};
 for (const { coordinate, connection } of PuzzleGenerator(size, puzzleRandom)) {
