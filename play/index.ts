@@ -8,13 +8,20 @@ import "../polyfill.js";
 import { v4 as uuid } from "uuid";
 import Random from "./random";
 
-import { Main, Grid, asCoordinateKey, Cell, Cells } from "./elements";
+import {
+	hexagonUnitHeight,
+	Main,
+	Grid,
+	asCoordinateKey,
+	Cell,
+	Cells,
+} from "./elements";
 
 import { html } from "./component";
 import PuzzleGenerator from "./puzzle-generator";
 
 const width = 1000;
-const height = (width * Math.sqrt(3)) / 2;
+const height = width * hexagonUnitHeight;
 const main = Main([width, height]);
 
 const unseeded = Random();
@@ -55,7 +62,7 @@ grid
 	.translate(width / 2, height / 2)
 	.scale(height / (size * 3 + 2));
 
-main.element.append(grid.element);
+grid.appendTo(main.element);
 main.appendTo(document.body);
 
 document.body.append(html`<a class="control" href=".">New game</a>`);

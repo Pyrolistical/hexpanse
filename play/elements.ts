@@ -24,6 +24,7 @@ export type Cell = SvgComponent<SVGElement> & {
 	valid: boolean;
 };
 
+export const hexagonUnitHeight = Math.sqrt(3) / 2;
 // const corners = [
 // 	[Math.sqrt(3) / 2, -0.5],
 // 	[Math.sqrt(3) / 2, 0.5],
@@ -35,12 +36,12 @@ export type Cell = SvgComponent<SVGElement> & {
 const Hexagon = (): SvgComponent<SVGPathElement> => {
 	const element = html`<path
 		d="
-    m -0.8660254037844386 -0.5
-    l  0.8660254037844386 -0.5
-    l  0.8660254037844386  0.5
-    l  0                   1
-    l -0.8660254037844386  0.5
-    l -0.8660254037844386 -0.5
+    m ${-hexagonUnitHeight} -0.5
+    l  ${hexagonUnitHeight} -0.5
+    l  ${hexagonUnitHeight}  0.5
+    l 0                   1
+    l ${-hexagonUnitHeight}  0.5
+    l ${-hexagonUnitHeight} -0.5
     z
   "
 	/>`;
@@ -85,7 +86,7 @@ export const Grid = (
 		// Q basis [Math.sqrt(3), 0]
 		// R basis [Math.sqrt(3) / 2, 3 / 2]
 		// [x, y] = Q basis * q + R basis * r
-		const x = Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r;
+		const x = 2 * hexagonUnitHeight * q + hexagonUnitHeight * r;
 		const y = (3 / 2) * r;
 		g.transformWith(root).translate(x, y);
 		cell.appendTo(g.element);
@@ -157,255 +158,255 @@ const EdgeElement = (connection: Connection): SVGElement => {
 		case 0b100000: // i
 			return html`<g>
 				<circle r=".25" />
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 			</g>`;
 		case 0b110000: // v
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 			</g>`;
 		case 0b101000: // c
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 			</g>`;
 		case 0b100100: // l
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 			</g>`;
 		case 0b111000: // e
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 			</g>`;
 		case 0b101100: // y
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 			</g>`;
 		case 0b110100: // λ
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 			</g>`;
 		case 0b101010: // tri
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(240)"
 				/>
 			</g>`;
 		case 0b111100: // half
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 			</g>`;
 		case 0b101110: // rake
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(240)"
 				/>
 			</g>`;
 		case 0b110110: // x
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(240)"
 				/>
 			</g>`;
 		case 0b111110: // hat
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(240)"
 				/>
 			</g>`;
 		case 0b111111: // star
 			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(60)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(120)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(180)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(240)"
 				/>
 				<line
 					x1="0"
 					y1="0"
-					x2="0.8660254037844386"
+					x2="${hexagonUnitHeight}"
 					y2="0"
 					transform="rotate(300)"
 				/>
