@@ -3,11 +3,11 @@ import { assertInstanceOf } from "../assert";
 import { SvgComponent, svg as html } from "./component";
 import { ChooseOne } from "./random";
 
+// cube coordinates https://www.redblobgames.com/grids/hexagons/#coordinates
 type Axis = number;
-
-export type Q = Axis;
-export type R = Axis;
-export type S = Axis;
+type Q = Axis;
+type R = Axis;
+type S = Axis;
 export type Coordinate = {
 	q: Q;
 	r: R;
@@ -24,16 +24,6 @@ export type Cell = SvgComponent<SVGElement> & {
 	valid: boolean;
 };
 
-type CellRef = {
-	[celly]: boolean;
-	cell: Cell;
-};
-
-export type Cells = Record<CoordinateKey, Cell>;
-export type Grid = SvgComponent<SVGGElement> & {
-	cells: Cells;
-};
-
 // const corners = [
 // 	[Math.sqrt(3) / 2, -0.5],
 // 	[Math.sqrt(3) / 2, 0.5],
@@ -42,7 +32,7 @@ export type Grid = SvgComponent<SVGGElement> & {
 // 	[-Math.sqrt(3) / 2, -0.5],
 // 	[0, -1],
 // ];
-export const Hexagon = (): SvgComponent<SVGPathElement> => {
+const Hexagon = (): SvgComponent<SVGPathElement> => {
 	const element = html`<path
 		d="
     m -0.8660254037844386 -0.5
@@ -58,19 +48,28 @@ export const Hexagon = (): SvgComponent<SVGPathElement> => {
 
 	return SvgComponent({
 		element,
-	}) as SvgComponent<SVGPathElement>;
+	});
 };
 
 const G = (): SvgComponent<SVGGElement> => {
 	const element = html`<g></g>`;
 	assertInstanceOf(element, SVGGElement);
+
 	return SvgComponent({
 		element,
-	}) as SvgComponent<SVGGElement>;
+	});
 };
 
+type CellRef = {
+	[celly]: boolean;
+	cell: Cell;
+};
 const isCell = (value: any): value is CellRef => value[celly];
 
+export type Cells = Record<CoordinateKey, Cell>;
+export type Grid = SvgComponent<SVGGElement> & {
+	cells: Cells;
+};
 export const Grid = (
 	root: SVGSVGElement,
 	cells: Cells,
@@ -93,6 +92,7 @@ export const Grid = (
 		return g;
 	});
 	const element = html`<g>${positionedCells}</g>`;
+	assertInstanceOf(element, SVGGElement);
 	element.addEventListener("pointerdown", (event) => {
 		for (const hit of event.composedPath()) {
 			if (isCell(hit)) {
@@ -100,7 +100,6 @@ export const Grid = (
 			}
 		}
 	});
-	assertInstanceOf(element, SVGGElement);
 
 	return SvgComponent<Grid>({
 		element,
@@ -117,14 +116,17 @@ export const Main = ([
 		xmlns="http://www.w3.org/2000/svg"
 		viewBox="0 0 ${width} ${height}"
 	></svg>`;
+
 	return SvgComponent({
 		element,
 	});
 };
 
+// degrees on a circle at 60 intervals
 export const Orientations = [0, 60, 120, 180, 240, 300] as const;
 export type Orientation = typeof Orientations[number];
 
+// 8-bit flag to indicate there is a connection in that cube coordinate direction
 const Connections = [
 	// q -s r -q s -r
 	0b100000, // i
@@ -148,7 +150,6 @@ const Connections = [
 
 	0b111111, // star
 ] as const;
-
 export type Connection = typeof Connections[number];
 
 const EdgeElement = (connection: Connection): SVGElement => {
@@ -417,6 +418,7 @@ const EdgeElement = (connection: Connection): SVGElement => {
 };
 export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	const element = EdgeElement(connection);
+
 	return SvgComponent({
 		element,
 	});
@@ -431,6 +433,7 @@ export const Cell = (
 	const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
 	const orientation = chooseOne(Orientations);
 	element.classList.add(`rotate${orientation}`);
+
 	return SvgComponent<Cell>({
 		element,
 		orientation,

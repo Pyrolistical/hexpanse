@@ -70,7 +70,14 @@ const normalizeConnection = (connection: number): Connection => {
 	}
 };
 
-type Direction = 0 | 1 | 2 | 3 | 4 | 5;
+// direction is indexes a hex side
+type Direction =
+	| 0 // q
+	| 1 // -s
+	| 2 // r
+	| 3 // -q
+	| 4 // s
+	| 5; // -r
 type Neighbour = { coordinate: Coordinate; direction: Direction };
 function* Neighbours({ q, r, s }: Coordinate): Generator<Neighbour, any, any> {
 	yield {
@@ -98,14 +105,15 @@ function* Neighbours({ q, r, s }: Coordinate): Generator<Neighbour, any, any> {
 		direction: 5,
 	};
 }
+
 function* ValidNeighbours(
 	size: number,
 	coordinate: Coordinate
 ): Generator<Neighbour, any, any> {
-	for (const { coordinate: neighbourCoordinate, direction } of Neighbours(
-		coordinate
-	)) {
-		const { q, r, s } = neighbourCoordinate;
+	for (const neighbour of Neighbours(coordinate)) {
+		const {
+			coordinate: { q, r, s },
+		} = neighbour;
 		if (q < -size || q > size) {
 			continue;
 		}
@@ -115,7 +123,7 @@ function* ValidNeighbours(
 		if (s < -size || s > size) {
 			continue;
 		}
-		yield { coordinate: neighbourCoordinate, direction };
+		yield neighbour;
 	}
 }
 
