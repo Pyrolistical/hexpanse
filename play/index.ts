@@ -3,8 +3,9 @@ import "sanitize.css/forms.css";
 import "sanitize.css/assets.css";
 import "sanitize.css/typography.css";
 import "./index.css";
-import "./polyfill.js";
+import "../polyfill.js";
 
+import { v4 as uuid } from "uuid";
 import Seedrandom from "seedrandom";
 
 import Elements, {
@@ -16,7 +17,7 @@ import Elements, {
 	Cells,
 } from "./elements";
 
-import { svg as html, SvgComponent } from "./component";
+import { svg as html, html as realHtml, SvgComponent } from "./component";
 
 const width = 1000;
 const height = width * 0.8660254037844386;
@@ -123,8 +124,6 @@ type GameCell = Cell & {
 	connection: Connection;
 	valid: boolean;
 };
-
-const seed = "1133";
 
 const unseeded = Seedrandom();
 
@@ -397,7 +396,7 @@ const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	});
 };
 
-const size = 7;
+const size = 15;
 
 const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
 
@@ -513,7 +512,15 @@ function skip<T>(n: number, iterator: IterableIterator<T>): IteratorResult<T> {
 	return cursor!;
 }
 
+console.time("solution");
 const solutionTree: Record<CoordinateKey, number> = {};
+let seed: string;
+if (window.location.hash === "") {
+	seed = uuid();
+	history.replaceState(undefined, "", `#${seed}`);
+} else {
+	seed = window.location.hash.substring(1);
+}
 const puzzleRandom = Seedrandom(seed);
 const connected = new Set<CoordinateKey>();
 const working = new Map<CoordinateKey, Coordinate>();
@@ -566,6 +573,7 @@ for (const { q, r, s } of coordinates) {
 
 	cells[`${q} ${r} ${s}`] = cell;
 }
+console.timeEnd("solution");
 const grid = Grid<GameCell>(cells, (cell, event) => {
 	if (event.buttons === 1) {
 		cell.element.classList.remove(`rotate${cell.orientation}`);
@@ -585,3 +593,13 @@ grid
 main.append(grid.element);
 
 document.body.append(main);
+document.body.append(realHtml`<a class="control" href=".">New game</a>`);
+document.body.append(
+	realHtml`<p>Inspired by <a href="https://https://hexapipes.vercel.app/">Hexapipes</a></p>`
+);
+document.body.append(
+	realHtml`<p>Source code: <a href="https://github.com/Pyrolistical/hexpanse">https://github.com/Pyrolistical/hexpanse</a></p>`
+);
+document.body.append(
+	realHtml`<p>Author: <a href="https://twitter.com/pyrolistical">@pyrolistical</a></p>`
+);

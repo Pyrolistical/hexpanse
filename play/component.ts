@@ -1,4 +1,4 @@
-import { assertInstanceOf } from "./assert";
+import { assertInstanceOf } from "../assert";
 
 export type Component<E extends Element> = {
 	element: E;

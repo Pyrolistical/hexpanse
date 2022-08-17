@@ -1,4 +1,4 @@
-import { assertInstanceOf } from "./assert";
+import { assertInstanceOf } from "../assert";
 
 import { SvgComponent, svg as html } from "./component";
 
