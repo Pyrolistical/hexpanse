@@ -595,7 +595,7 @@ main.append(grid.element);
 document.body.append(main);
 document.body.append(realHtml`<a class="control" href=".">New game</a>`);
 document.body.append(
-	realHtml`<p>Inspired by <a href="https://https://hexapipes.vercel.app/">Hexapipes</a></p>`
+	realHtml`<p>Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a></p>`
 );
 document.body.append(
 	realHtml`<p>Source code: <a href="https://github.com/Pyrolistical/hexpanse">https://github.com/Pyrolistical/hexpanse</a></p>`
