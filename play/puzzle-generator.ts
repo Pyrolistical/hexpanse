@@ -137,12 +137,16 @@ function* CoordinatesGenerator(size: number): Generator<Coordinate, any, any> {
 type ConnectableNeighbour = { neighbour: Neighbour; connected: boolean };
 function* PartitionNeighbours(
 	size: number,
-	cell: Coordinate,
-	connected: Set<CoordinateKey>
+	coordinate: Coordinate,
+	visited: Set<CoordinateKey>
 ): Generator<ConnectableNeighbour, any, any> {
-	for (const neighbour of ValidNeighbours(size, cell)) {
-		const { coordinate } = neighbour;
-		yield { neighbour, connected: connected.has(asCoordinateKey(coordinate)) };
+	for (const neighbour of ValidNeighbours(size, coordinate)) {
+		const { coordinate: neighbourCoordinate } = neighbour;
+		const connected = visited.has(asCoordinateKey(neighbourCoordinate));
+		yield {
+			neighbour,
+			connected,
+		};
 	}
 }
 
@@ -153,36 +157,36 @@ export default function* (
 	chooseOne: ChooseOne
 ): Generator<Solution, any, any> {
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
-	const solutionTree: Record<CoordinateKey, number> = {};
-	const connected = new Set<CoordinateKey>();
+	const solution: Record<CoordinateKey, number> = {};
+	const visited = new Set<CoordinateKey>();
 	const working = new Map<CoordinateKey, Coordinate>();
 
 	const start = chooseOne(coordinates);
-	connected.add(asCoordinateKey(start));
+	visited.add(asCoordinateKey(start));
 	for (const { coordinate } of ValidNeighbours(size, start)) {
 		working.set(asCoordinateKey(coordinate), coordinate);
 	}
 
-	while (connected.size < coordinates.length) {
+	while (visited.size < coordinates.length) {
 		if (working.size === 0) {
 			throw new Error("working set unexpectedly empty");
 		}
 		const cellKey = chooseOne(working);
 		const cell = working.get(cellKey)!;
-		const neighbours = [...PartitionNeighbours(size, cell, connected)];
+		const neighbours = [...PartitionNeighbours(size, cell, visited)];
 		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
 		const {
 			neighbour: { coordinate, direction },
 		} = chooseOne(connectedNeighbours);
 
 		const connectedNeighbourKey = asCoordinateKey(coordinate);
-		solutionTree[connectedNeighbourKey] ??= 0;
-		solutionTree[connectedNeighbourKey] |= 0b100000 >> (direction + 3) % 6;
+		solution[connectedNeighbourKey] ??= 0;
+		solution[connectedNeighbourKey] |= 0b100000 >> (direction + 3) % 6;
 
-		solutionTree[cellKey] ??= 0;
-		solutionTree[cellKey] |= 0b100000 >> direction;
+		solution[cellKey] ??= 0;
+		solution[cellKey] |= 0b100000 >> direction;
 
-		connected.add(cellKey);
+		visited.add(cellKey);
 		for (const {
 			neighbour: { coordinate },
 		} of neighbours.filter(({ connected }) => !connected)) {
@@ -192,8 +196,8 @@ export default function* (
 	}
 
 	for (const coordinate of coordinates) {
-		const solution = solutionTree[asCoordinateKey(coordinate)]!;
-		const connection = normalizeConnection(solution);
+		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
+		const connection = normalizeConnection(denormalConnection);
 		yield {
 			coordinate,
 			connection,
