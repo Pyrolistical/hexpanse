@@ -20,90 +20,423 @@ export type Cell = SvgComponent<SVGElement> & {
 	q: Q;
 	r: R;
 	s: S;
+	orientation: Orientation;
+	connection: Connection;
+	valid: boolean;
 };
 
-type CellRef<E extends Cell> = {
+type CellRef = {
 	[celly]: boolean;
-	cell: E;
+	cell: Cell;
 };
 
-export type Cells<T extends Cell> = Record<CoordinateKey, T>;
-export type Grid<T extends Cell> = SvgComponent<SVGGElement> & {
-	cells: Cells<T>;
+export type Cells = Record<CoordinateKey, Cell>;
+export type Grid = SvgComponent<SVGGElement> & {
+	cells: Cells;
 };
 
-export default (root: SVGSVGElement) => {
-	// const corners = [
-	// 	[Math.sqrt(3) / 2, -0.5],
-	// 	[Math.sqrt(3) / 2, 0.5],
-	// 	[0, 1],
-	// 	[-Math.sqrt(3) / 2, 0.5],
-	// 	[-Math.sqrt(3) / 2, -0.5],
-	// 	[0, -1],
-	// ];
-	const Hexagon = (): SvgComponent<SVGPathElement> => {
-		const element = html`<path
-			d="
-      m -0.8660254037844386 -0.5
-      l  0.8660254037844386 -0.5
-      l  0.8660254037844386  0.5
-      l  0                   1
-      l -0.8660254037844386  0.5
-      l -0.8660254037844386 -0.5
-      z
-    "
-		/>`;
-		assertInstanceOf(element, SVGPathElement);
+// const corners = [
+// 	[Math.sqrt(3) / 2, -0.5],
+// 	[Math.sqrt(3) / 2, 0.5],
+// 	[0, 1],
+// 	[-Math.sqrt(3) / 2, 0.5],
+// 	[-Math.sqrt(3) / 2, -0.5],
+// 	[0, -1],
+// ];
+export const Hexagon = (): SvgComponent<SVGPathElement> => {
+	const element = html`<path
+		d="
+    m -0.8660254037844386 -0.5
+    l  0.8660254037844386 -0.5
+    l  0.8660254037844386  0.5
+    l  0                   1
+    l -0.8660254037844386  0.5
+    l -0.8660254037844386 -0.5
+    z
+  "
+	/>`;
+	assertInstanceOf(element, SVGPathElement);
 
-		return SvgComponent({
-			element,
-		}) as SvgComponent<SVGPathElement>;
-	};
+	return SvgComponent({
+		element,
+	}) as SvgComponent<SVGPathElement>;
+};
 
-	const isCell = <E extends Cell>(value: any): value is CellRef<E> =>
-		value[celly];
+const G = (): SvgComponent<SVGGElement> => {
+	const element = html`<g></g>`;
+	assertInstanceOf(element, SVGGElement);
+	return SvgComponent({
+		element,
+	}) as SvgComponent<SVGGElement>;
+};
 
-	const G = (): SvgComponent<SVGGElement> => {
-		const element = html`<g></g>`;
-		assertInstanceOf(element, SVGGElement);
-		return SvgComponent({
-			element,
-		}) as SvgComponent<SVGGElement>;
-	};
-	const Grid = <T extends Cell>(
-		cells: Cells<T>,
-		onCellSelected: (cell: T, event: PointerEvent) => void
-	): Grid<T> => {
-		const positionedCells = Object.values(cells).map((cell) => {
-			Object.assign(cell.element, { [celly]: true, cell });
-			const g = G();
-			// Q basis [Math.sqrt(3), 0]
-			// R basis [Math.sqrt(3) / 2, 3 / 2]
-			// [x, y] = Q basis * q + R basis * r
-			const x = Math.sqrt(3) * cell.q + (Math.sqrt(3) / 2) * cell.r;
-			const y = (3 / 2) * cell.r;
-			g.transformWith(root).translate(x, y);
-			cell.appendTo(g.element);
-			return g;
-		});
-		const element = html`<g>${positionedCells}</g>`;
-		element.addEventListener("pointerdown", (event) => {
-			for (const hit of event.composedPath()) {
-				if (isCell<T>(hit)) {
-					return onCellSelected(hit.cell, event);
-				}
+const isCell = (value: any): value is CellRef => value[celly];
+
+export const Grid = (
+	root: SVGSVGElement,
+	cells: Cells,
+	onCellSelected: (cell: Cell, event: PointerEvent) => void
+): Grid => {
+	const positionedCells = Object.values(cells).map((cell) => {
+		Object.assign(cell.element, { [celly]: true, cell });
+		const g = G();
+		// Q basis [Math.sqrt(3), 0]
+		// R basis [Math.sqrt(3) / 2, 3 / 2]
+		// [x, y] = Q basis * q + R basis * r
+		const x = Math.sqrt(3) * cell.q + (Math.sqrt(3) / 2) * cell.r;
+		const y = (3 / 2) * cell.r;
+		g.transformWith(root).translate(x, y);
+		cell.appendTo(g.element);
+		return g;
+	});
+	const element = html`<g>${positionedCells}</g>`;
+	element.addEventListener("pointerdown", (event) => {
+		for (const hit of event.composedPath()) {
+			if (isCell(hit)) {
+				return onCellSelected(hit.cell, event);
 			}
-		});
-		assertInstanceOf(element, SVGGElement);
+		}
+	});
+	assertInstanceOf(element, SVGGElement);
 
-		return SvgComponent<Grid<T>>({
-			element,
-			cells,
-		});
-	};
+	return SvgComponent<Grid>({
+		element,
+		cells,
+	});
+};
 
-	return {
-		Hexagon,
-		Grid,
-	};
+type Dimension = [number, number];
+export const Main = ([
+	width,
+	height,
+]: Dimension): SvgComponent<SVGSVGElement> => {
+	const element = html<SVGSVGElement>`<svg
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 ${width} ${height}"
+	></svg>`;
+	return SvgComponent({
+		element,
+	});
+};
+
+export const Orientations = [0, 60, 120, 180, 240, 300] as const;
+export type Orientation = typeof Orientations[number];
+
+const Connections = [
+	// q -s r -q s -r
+	0b100000, // i
+
+	0b110000, // v
+	0b101000, // c
+	0b100100, // l
+	// 0b100010, // dupe c
+
+	0b111000, // e
+	0b101100, // y
+	0b110100, // λ
+	0b101010, // tri
+
+	0b111100, // half
+	0b101110, // rake
+	0b110110, // x
+	// 0b111010, // dupe rake
+
+	0b111110, // hat
+
+	0b111111, // star
+] as const;
+
+export type Connection = typeof Connections[number];
+
+const EdgeElement = (connection: Connection): SVGElement => {
+	switch (connection) {
+		case 0b100000: // i
+			return html`<g>
+				<circle r=".25" />
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+			</g>`;
+		case 0b110000: // v
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+			</g>`;
+		case 0b101000: // c
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+			</g>`;
+		case 0b100100: // l
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+			</g>`;
+		case 0b111000: // e
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+			</g>`;
+		case 0b101100: // y
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+			</g>`;
+		case 0b110100: // λ
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+			</g>`;
+		case 0b101010: // tri
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case 0b111100: // half
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+			</g>`;
+		case 0b101110: // rake
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case 0b110110: // x
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case 0b111110: // hat
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+			</g>`;
+		case 0b111111: // star
+			return html`<g>
+				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(60)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(120)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(180)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(240)"
+				/>
+				<line
+					x1="0"
+					y1="0"
+					x2="0.8660254037844386"
+					y2="0"
+					transform="rotate(300)"
+				/>
+			</g>`;
+		default:
+			throw new Error(
+				`unhandled connection ${(connection as unknown as number).toString(2)}`
+			);
+	}
+};
+export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
+	const element = EdgeElement(connection);
+	return SvgComponent({
+		element,
+	});
+};
+
+export const Cell = (
+	random: () => number,
+	q: number,
+	r: number,
+	s: number,
+	connection: Connection
+): Cell => {
+	const edge = Edge(connection);
+	const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
+	const orientation = Orientations[Math.floor(random() * Orientations.length)]!;
+	element.classList.add(`rotate${orientation}`);
+	return SvgComponent<Cell>({
+		element,
+		orientation,
+		connection,
+		valid: false,
+		q,
+		r,
+		s,
+	});
 };

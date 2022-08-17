@@ -8,59 +8,35 @@ import "../polyfill.js";
 import { v4 as uuid } from "uuid";
 import Seedrandom from "seedrandom";
 
-import Elements, {
+import {
+	Main,
 	Coordinate,
 	CoordinateKey,
 	asCoordinateKey,
 	Grid,
 	Cell,
 	Cells,
+	Connection,
 } from "./elements";
 
-import { svg as html, html as realHtml, SvgComponent } from "./component";
+import { html } from "./component";
 
 const width = 1000;
-const height = width * 0.8660254037844386;
-const main = html<SVGSVGElement>`<svg
-	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 ${width} ${height}"
-></svg>`;
+const height = (width * Math.sqrt(3)) / 2;
+const main = Main([width, height]);
 
-const { Hexagon, Grid } = Elements(main);
+const unseeded = Seedrandom();
 
-const Orientations = [0, 60, 120, 180, 240, 300] as const;
-type Orientation = typeof Orientations[number];
+const size = 15;
 
-const Connections = [
-	// q -s r -q s -r
-	0b100000, // i
-
-	0b110000, // v
-	0b101000, // c
-	0b100100, // l
-	// 0b100010, // dupe c
-
-	0b111000, // e
-	0b101100, // y
-	0b110100, // λ
-	0b101010, // tri
-
-	0b111100, // half
-	0b101110, // rake
-	0b110110, // x
-	// 0b111010, // dupe rake
-
-	0b111110, // hat
-
-	0b111111, // star
-] as const;
+const validate = (grid: Grid, cell: Cell) => {};
 
 const normalizeConnections = (connection: number): Connection => {
 	if (connection === 0) {
 		throw new Error("connection cannot be empty");
 	}
 	if (connection === 0b111111) {
-		return 0b111111;
+		return 0b111111; // star
 	}
 	while (!(connection & 0b100000) || connection & 0b000001) {
 		const first = connection & 0b100000;
@@ -116,310 +92,6 @@ const normalizeConnections = (connection: number): Connection => {
 				)} from connection ${connection.toString(2)}`
 			);
 	}
-};
-type Connection = typeof Connections[number];
-
-type GameCell = Cell & {
-	orientation: Orientation;
-	connection: Connection;
-	valid: boolean;
-};
-
-const unseeded = Seedrandom();
-
-const EdgeElement = (connection: Connection): SVGElement => {
-	switch (connection) {
-		case 0b100000: // i
-			return html`<g>
-				<circle r=".25" />
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-			</g>`;
-		case 0b110000: // v
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-			</g>`;
-		case 0b101000: // c
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-			</g>`;
-		case 0b100100: // l
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-			</g>`;
-		case 0b111000: // e
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-			</g>`;
-		case 0b101100: // y
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-			</g>`;
-		case 0b110100: // λ
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-			</g>`;
-		case 0b101010: // tri
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case 0b111100: // half
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-			</g>`;
-		case 0b101110: // rake
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case 0b110110: // x
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case 0b111110: // hat
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-			</g>`;
-		case 0b111111: // star
-			return html`<g>
-				<line x1="0" y1="0" x2="0.8660254037844386" y2="0" />
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(60)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(120)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(180)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(240)"
-				/>
-				<line
-					x1="0"
-					y1="0"
-					x2="0.8660254037844386"
-					y2="0"
-					transform="rotate(300)"
-				/>
-			</g>`;
-		default:
-			throw new Error(`unhandled connection ${connection.toString(2)}`);
-	}
-};
-const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
-	const element = EdgeElement(connection);
-	return SvgComponent({
-		element,
-	});
-};
-
-const size = 15;
-
-const validate = (grid: Grid<GameCell>, cell: GameCell) => {};
-
-const GameCell = (
-	q: number,
-	r: number,
-	s: number,
-	connection: Connection
-): GameCell => {
-	const edge = Edge(connection);
-	const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
-	const orientation =
-		Orientations[Math.floor(unseeded() * Orientations.length)]!;
-	element.classList.add(`rotate${orientation}`);
-	return SvgComponent<GameCell>({
-		element,
-		orientation,
-		connection,
-		valid: false,
-		q,
-		r,
-		s,
-	});
 };
 
 const coordinates: Coordinate[] = [];
@@ -566,15 +238,15 @@ while (connected.size < coordinates.length) {
 	working.delete(cellKey);
 }
 
-const cells: Cells<GameCell> = {};
+const cells: Cells = {};
 for (const { q, r, s } of coordinates) {
 	const solution = solutionTree[asCoordinateKey({ q, r, s })]!;
-	const cell = GameCell(q, r, s, normalizeConnections(solution));
+	const cell = Cell(unseeded, q, r, s, normalizeConnections(solution));
 
 	cells[`${q} ${r} ${s}`] = cell;
 }
 console.timeEnd("solution");
-const grid = Grid<GameCell>(cells, (cell, event) => {
+const grid = Grid(main.element, cells, (cell, event) => {
 	if (event.buttons === 1) {
 		cell.element.classList.remove(`rotate${cell.orientation}`);
 		cell.element.classList.remove(`rotateTo${cell.orientation}`);
@@ -586,20 +258,27 @@ const grid = Grid<GameCell>(cells, (cell, event) => {
 	}
 });
 grid
-	.transformWith(main)
+	.transformWith(main.element)
 	.translate(width / 2, height / 2)
 	.scale(height / (size * 3 + 2));
 
-main.append(grid.element);
+main.element.append(grid.element);
 
-document.body.append(main);
-document.body.append(realHtml`<a class="control" href=".">New game</a>`);
+main.appendTo(document.body);
+document.body.append(html`<a class="control" href=".">New game</a>`);
 document.body.append(
-	realHtml`<p>Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a></p>`
+	html`<p>Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a></p>`
 );
 document.body.append(
-	realHtml`<p>Source code: <a href="https://github.com/Pyrolistical/hexpanse">https://github.com/Pyrolistical/hexpanse</a></p>`
+	html`<p>
+		Source code:
+		<a href="https://github.com/Pyrolistical/hexpanse"
+			>https://github.com/Pyrolistical/hexpanse</a
+		>
+	</p>`
 );
 document.body.append(
-	realHtml`<p>Author: <a href="https://twitter.com/pyrolistical">@pyrolistical</a></p>`
+	html`<p>
+		Author: <a href="https://twitter.com/pyrolistical">@pyrolistical</a>
+	</p>`
 );
