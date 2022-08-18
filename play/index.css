@@ -72,9 +72,16 @@ a {
 	stroke-linecap: round;
 }
 
-body > svg {
+main {
 	width: 100%;
-	aspect-ratio: 1 / 0.8660254037844386;
+	max-height: 100vh;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+main svg {
+	width: 100%;
 }
 
 @keyframes rotateTo0 {

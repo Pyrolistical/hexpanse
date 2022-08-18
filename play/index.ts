@@ -26,7 +26,7 @@ const main = Main([width, height]);
 
 const unseeded = Random();
 
-const size = 1;
+const size = 20;
 
 const validate = (grid: Grid, cell: Cell) => {};
 
@@ -63,21 +63,19 @@ grid
 	.scale(height / (size * 3 + 2));
 
 grid.appendTo(main.element);
-main.appendTo(document.body);
 
-document.body.append(html`<a class="control" href=".">New game</a>`);
 document.body.append(
-	html`<p>Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a></p>`
-);
-document.body.append(
+	html`<main>${main}</main>`,
+	html`<a class="control" href=".">New game</a>`,
+	html`<p>
+		Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a>
+	</p>`,
 	html`<p>
 		Source code:
 		<a href="https://github.com/Pyrolistical/hexpanse"
 			>https://github.com/Pyrolistical/hexpanse</a
 		>
-	</p>`
-);
-document.body.append(
+	</p>`,
 	html`<p>
 		Author: <a href="https://twitter.com/pyrolistical">@pyrolistical</a>
 	</p>`
