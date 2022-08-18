@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "vite",
-    "test": "vitest"
+    "test": "vitest",
+    "build": "vite build && git checkout pages && rm -rf assets play && mv dist/* . && git add . && git commit -m'release' && git push && git checkout master"
   },
   "repository": {
     "type": "git",
