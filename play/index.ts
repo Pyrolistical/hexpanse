@@ -40,12 +40,15 @@ if (window.location.hash === "") {
 
 const puzzleRandom = Random(seed);
 const cells: Cells = {};
+let start = Date.now();
 for (const { coordinate, connection } of PuzzleGenerator(size, puzzleRandom)) {
 	const cell = Cell(unseeded, coordinate, connection);
 
 	cells[asCoordinateKey(coordinate)] = cell;
 }
+const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 
+start = Date.now();
 const grid = Grid(main.element, cells, (cell, event) => {
 	if (event.buttons === 1) {
 		cell.element.classList.remove(`rotate${cell.orientation}`);
@@ -64,9 +67,12 @@ grid
 
 grid.appendTo(main.element);
 
+document.body.append(html`<main>${main}</main>`);
+const renderTime = html`<p>Rendered ${Math.ceil(Date.now() - start)}ms</p>`;
 document.body.append(
-	html`<main>${main}</main>`,
 	html`<a class="control" href=".">New game</a>`,
+	puzzleTime,
+	renderTime,
 	html`<p>
 		Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a>
 	</p>`,

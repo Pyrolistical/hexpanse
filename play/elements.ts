@@ -53,7 +53,7 @@ const Hexagon = (): SvgComponent<SVGPathElement> => {
 };
 
 const G = (): SvgComponent<SVGGElement> => {
-	const element = html`<g></g>`;
+	const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
 	assertInstanceOf(element, SVGGElement);
 
 	return SvgComponent({
@@ -76,7 +76,8 @@ export const Grid = (
 	cells: Cells,
 	onCellSelected: (cell: Cell, event: PointerEvent) => void
 ): Grid => {
-	const positionedCells = Object.values(cells).map((cell) => {
+	const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+	for (const cell of Object.values(cells)) {
 		Object.assign(cell.element, { [celly]: true, cell });
 		const g = G();
 
@@ -90,9 +91,10 @@ export const Grid = (
 		const y = (3 / 2) * r;
 		g.transformWith(root).translate(x, y);
 		cell.appendTo(g.element);
-		return g;
-	});
-	const element = html`<g>${positionedCells}</g>`;
+
+		g.appendTo(element);
+	}
+
 	assertInstanceOf(element, SVGGElement);
 	element.addEventListener("pointerdown", (event) => {
 		for (const hit of event.composedPath()) {
@@ -426,13 +428,19 @@ export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 	});
 };
 
+const cellCache: Record<number, SVGGElement> = {};
+
 export const Cell = (
 	chooseOne: ChooseOne,
 	coordinate: Coordinate,
 	connection: Connection
 ): Cell => {
-	const edge = Edge(connection);
-	const element = html`<g class="cell">${Hexagon()}${edge}</g>`;
+	if (!cellCache[connection]) {
+		const edge = Edge(connection);
+		cellCache[connection] = html`<g class="cell">${Hexagon()}${edge}</g>`;
+	}
+	const element = cellCache[connection]!.cloneNode(true);
+	assertInstanceOf(element, SVGGElement);
 	const orientation = chooseOne(Orientations);
 	element.classList.add(`rotate${orientation}`);
 
