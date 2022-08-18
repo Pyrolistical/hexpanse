@@ -7,7 +7,8 @@ import {
 
 import { ChooseOne } from "./random";
 
-const normalizeConnection = (connection: number): Connection => {
+type DenormalConnection = number;
+const normalizeConnection = (connection: DenormalConnection): Connection => {
 	if (connection === 0) {
 		throw new Error("connection cannot be empty");
 	}
@@ -161,19 +162,19 @@ function* PartitionNeighbours(
 const asConnections = (
 	direction: Direction
 ): {
-	forwards: Connection;
-	backwards: Connection;
+	forwards: DenormalConnection;
+	backwards: DenormalConnection;
 } => {
 	return {
-		forwards: (0b100000 >> direction) as Connection,
-		backwards: (0b100000 >> (direction + 3) % 6) as Connection,
+		forwards: 0b100000 >> direction,
+		backwards: 0b100000 >> (direction + 3) % 6,
 	};
 };
 
 const addConnection = (
-	solution: Record<CoordinateKey, number>,
+	solution: Record<CoordinateKey, DenormalConnection>,
 	key: CoordinateKey,
-	connection: Connection
+	connection: DenormalConnection
 ) => {
 	solution[key] ??= 0;
 	solution[key] |= connection;
@@ -186,7 +187,7 @@ export default function* (
 	chooseOne: ChooseOne
 ): Generator<Solution, any, any> {
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
-	const solution: Record<CoordinateKey, number> = {};
+	const solution: Record<CoordinateKey, DenormalConnection> = {};
 	const visited = new Set<CoordinateKey>();
 	const working = new Map<CoordinateKey, Coordinate>();
 
