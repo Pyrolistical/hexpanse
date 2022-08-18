@@ -3,9 +3,11 @@ import {
 	CoordinateKey,
 	asCoordinateKey,
 	Connection,
+	Orientations,
+	Orientation,
 } from "./elements";
 
-import { ChooseOne } from "./random";
+import Random from "./random";
 
 type DenormalConnection = number;
 const normalizeConnection = (connection: DenormalConnection): Connection => {
@@ -180,12 +182,24 @@ const addConnection = (
 	solution[key] |= connection;
 };
 
-type Solution = { coordinate: Coordinate; connection: Connection };
+const Modes = ["normal", "hard"] as const;
+type Mode = typeof Modes[number];
+export type Config = {
+	seed: string;
+	size: number;
+	mode: Mode;
+};
+export const validMode = (value: any): value is Mode => {
+	return Modes.includes(value);
+};
+type Cell = {
+	coordinate: Coordinate;
+	orientation: Orientation;
+	connection: Connection;
+};
 // https://en.wikipedia.org/wiki/Prim%27s_algorithm
-export default function* (
-	size: number,
-	chooseOne: ChooseOne
-): Generator<Solution, any, any> {
+export default function* ({ size, seed }: Config): Generator<Cell, any, any> {
+	const chooseOne = Random(seed);
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
 	const solution: Record<CoordinateKey, DenormalConnection> = {};
 	const visited = new Set<CoordinateKey>();
@@ -226,9 +240,11 @@ export default function* (
 
 	for (const coordinate of coordinates) {
 		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
+		const orientation = chooseOne(Orientations);
 		const connection = normalizeConnection(denormalConnection);
 		yield {
 			coordinate,
+			orientation,
 			connection,
 		};
 	}

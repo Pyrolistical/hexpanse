@@ -1,7 +1,6 @@
 import { assertInstanceOf } from "../assert";
 
 import { SvgComponent, svg as html } from "./component";
-import { ChooseOne } from "./random";
 
 // cube coordinates https://www.redblobgames.com/grids/hexagons/#coordinates
 type Axis = number;
@@ -431,8 +430,8 @@ export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 const cellCache: Record<number, SVGGElement> = {};
 
 export const Cell = (
-	chooseOne: ChooseOne,
 	coordinate: Coordinate,
+	orientation: Orientation,
 	connection: Connection
 ): Cell => {
 	if (!cellCache[connection]) {
@@ -441,7 +440,6 @@ export const Cell = (
 	}
 	const element = cellCache[connection]!.cloneNode(true);
 	assertInstanceOf(element, SVGGElement);
-	const orientation = chooseOne(Orientations);
 	element.classList.add(`rotate${orientation}`);
 
 	return SvgComponent<Cell>({
