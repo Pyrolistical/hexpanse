@@ -30,6 +30,7 @@
 	--cell-background: var(--dark-cell-background);
 	--cell-foreground: var(--dark-cell-foreground);
 	--rotatation-speed: 250ms;
+	color-scheme: dark;
 }
 
 html,
@@ -39,6 +40,7 @@ body {
 }
 
 h1,
+h2,
 p {
 	text-align: center;
 }
@@ -47,24 +49,46 @@ a {
 	text-decoration: none;
 }
 
-.control {
-	display: block;
-	text-align: center;
-	margin-top: 50px;
-	text-decoration: underline;
+#new-game-form {
+	accent-color: var(--foreground);
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: baseline;
+	gap: 8px;
 }
+
+#new-game-form button {
+	background-color: var(--cell-background);
+	color: var(--cell-foreground);
+	border: 2px solid var(--base01);
+	border-radius: 4px;
+}
+#new-game-form button:hover {
+	background-color: var(--base01);
+	cursor: pointer;
+}
+
+#new-game-form fieldset {
+	display: inline-flex;
+	flex-direction: row;
+	gap: 16px;
+	margin: 0;
+	border: 2px solid var(--base01);
+	border-radius: 4px;
+}
+
 .cell {
 	fill: var(--cell-background);
 }
 
-.cell path {
+.cell > path {
 	stroke: var(--background);
 	stroke-width: 0.05;
 }
 
-.cell .end {
+path.end {
 	fill: var(--cell-foreground);
-	stroke: none;
 }
 
 .cell line {
