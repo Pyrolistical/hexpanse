@@ -61,6 +61,7 @@ saveWorker.onRestored = ({ size }, state) => {
 		{ coordinate, orientation, connection },
 	] of Object.entries(state)) {
 		cells[coordinateKey as CoordinateKey] = Cell(
+			main.element,
 			coordinate,
 			orientation,
 			connection

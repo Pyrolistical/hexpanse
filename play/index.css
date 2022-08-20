@@ -62,8 +62,9 @@ a {
 	stroke-width: 0.05;
 }
 
-.cell circle {
-	fill: var(--background);
+.cell .end {
+	fill: var(--cell-foreground);
+	stroke: none;
 }
 
 .cell line {

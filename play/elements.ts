@@ -155,13 +155,20 @@ const Connections = [
 ] as const;
 export type Connection = typeof Connections[number];
 
-const EdgeElement = (connection: Connection): SVGElement => {
+const EdgeElement = (
+	main: SVGSVGElement,
+	connection: Connection
+): SVGElement => {
 	switch (connection) {
-		case 0b100000: // i
+		case 0b100000: /* i */ {
+			const end = Hexagon();
+			end.transformWith(main).scale(0.25);
+			end.element.classList.add("end");
 			return html`<g>
-				<circle r=".25" />
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
+				${end}
 			</g>`;
+		}
 		case 0b110000: // v
 			return html`<g>
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
@@ -419,8 +426,11 @@ const EdgeElement = (connection: Connection): SVGElement => {
 			);
 	}
 };
-export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
-	const element = EdgeElement(connection);
+export const Edge = (
+	main: SVGSVGElement,
+	connection: Connection
+): SvgComponent<SVGGElement> => {
+	const element = EdgeElement(main, connection);
 
 	return SvgComponent({
 		element,
@@ -430,12 +440,13 @@ export const Edge = (connection: Connection): SvgComponent<SVGGElement> => {
 const cellCache: Record<number, SVGGElement> = {};
 
 export const Cell = (
+	main: SVGSVGElement,
 	coordinate: Coordinate,
 	orientation: Orientation,
 	connection: Connection
 ): Cell => {
 	if (!cellCache[connection]) {
-		const edge = Edge(connection);
+		const edge = Edge(main, connection);
 		cellCache[connection] = html`<g class="cell">${Hexagon()}${edge}</g>`;
 	}
 	const element = cellCache[connection]!.cloneNode(true);
