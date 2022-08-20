@@ -71,13 +71,8 @@ saveWorker.onRestored = ({ size }, state) => {
 	start = Date.now();
 	const grid = Grid(main.element, cells, (cell, event) => {
 		if (event.buttons === 1) {
-			cell.element.classList.remove(`rotate${cell.orientation}`);
-			cell.element.classList.remove(`rotateTo${cell.orientation}`);
-			cell.orientation += 60;
-			cell.orientation %= 360;
-			cell.element.classList.add(`rotate${cell.orientation}`);
-			cell.element.classList.add(`rotateTo${cell.orientation}`);
-			saveWorker.updateCell(cell.coordinate, cell.orientation);
+			const orientation = cell.rotateClockwise();
+			saveWorker.updateCell(cell.coordinate, orientation);
 		}
 	});
 	grid

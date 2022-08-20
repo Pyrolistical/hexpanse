@@ -21,6 +21,7 @@ export type Cell = SvgComponent<SVGElement> & {
 	orientation: Orientation;
 	connection: Connection;
 	valid: boolean;
+	rotateClockwise(): Orientation;
 };
 
 export const hexagonUnitHeight = Math.sqrt(3) / 2;
@@ -128,6 +129,15 @@ export const Main = ([
 // degrees on a circle at 60 intervals
 export const Orientations = [0, 60, 120, 180, 240, 300] as const;
 export type Orientation = typeof Orientations[number];
+function assertOrientation(value: number): asserts value is Orientation {
+	if (!Orientations.includes(value as Orientation)) {
+		throw new Error(
+			`expected one of Orientation [${Orientations.join(
+				", "
+			)}] but got ${value}`
+		);
+	}
+}
 
 // 8-bit flag to indicate there is a connection in that cube coordinate direction
 const Connections = [
@@ -459,5 +469,18 @@ export const Cell = (
 		connection,
 		valid: false,
 		coordinate,
+		rotateClockwise() {
+			element.classList.remove(`rotate${orientation}`);
+			element.classList.remove(`rotateTo${orientation}`);
+			let newOrientation: number = orientation;
+			newOrientation += 60;
+			newOrientation %= 360;
+			assertOrientation(newOrientation);
+			orientation = newOrientation;
+
+			element.classList.add(`rotate${orientation}`);
+			element.classList.add(`rotateTo${orientation}`);
+			return orientation;
+		},
 	});
 };
