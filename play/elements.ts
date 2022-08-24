@@ -74,7 +74,7 @@ export type Grid = SvgComponent<SVGGElement> & {
 export const Grid = (
 	root: SVGSVGElement,
 	cells: Cells,
-	onCellSelected: (cell: Cell, event: PointerEvent) => void
+	onCellSelected: (cell: Cell) => void
 ): Grid => {
 	const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
 	for (const cell of Object.values(cells)) {
@@ -96,10 +96,17 @@ export const Grid = (
 	}
 
 	assertInstanceOf(element, SVGGElement);
+	let lastButtons: number;
 	element.addEventListener("pointerdown", (event) => {
+		lastButtons = event.buttons;
+	});
+	element.addEventListener("pointerup", (event) => {
+		if (lastButtons !== 1) {
+			return;
+		}
 		for (const hit of event.composedPath()) {
 			if (isCell(hit)) {
-				return onCellSelected(hit.cell, event);
+				return onCellSelected(hit.cell);
 			}
 		}
 	});
@@ -119,6 +126,7 @@ export const Main = ([
 		xmlns="http://www.w3.org/2000/svg"
 		viewBox="0 0 ${width} ${height}"
 		preserveAspectRatio="xMidYMid meet"
+		draggable="false"
 	></svg>`;
 
 	return SvgComponent({

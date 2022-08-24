@@ -56,11 +56,9 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	}
 	const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 	start = Date.now();
-	const grid = Grid(main.element, cells, (cell, event) => {
-		if (event.buttons === 1) {
-			const orientation = cell.rotateClockwise();
-			saveWorker.updateCell(cell.coordinate, orientation);
-		}
+	const grid = Grid(main.element, cells, (cell) => {
+		const orientation = cell.rotateClockwise();
+		saveWorker.updateCell(cell.coordinate, orientation);
 	});
 	grid
 		.transformWith(main.element)
