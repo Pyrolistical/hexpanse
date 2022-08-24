@@ -83,8 +83,7 @@ a {
 }
 
 .cell > path {
-	stroke: var(--background);
-	stroke-width: 0.05;
+	transform: scale(0.855);
 }
 
 path.end {
