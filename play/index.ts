@@ -27,11 +27,10 @@ const width = 1000;
 const height = width * hexagonUnitHeight;
 const main = Main([width, height]);
 
-const validate = (grid: Grid, cell: Cell) => {};
-
 const cells: Cells = {};
 let start = Date.now();
 saveWorker.onRestored = ({ size, mode }, state) => {
+	let branches = 0;
 	for (const [
 		coordinateKey,
 		{ coordinate, orientation, connection },
@@ -42,6 +41,18 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 			orientation,
 			connection
 		);
+		if ([0b111000, 0b101100, 0b110100, 0b101010].includes(connection)) {
+			branches += 1;
+		}
+		if ([0b111100, 0b101110, 0b110110].includes(connection)) {
+			branches += 2;
+		}
+		if ([0b111110].includes(connection)) {
+			branches += 3;
+		}
+		if ([0b111111].includes(connection)) {
+			branches += 4;
+		}
 	}
 	const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 	start = Date.now();
@@ -61,7 +72,7 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	document.body.append(html`<main>${main}</main>`);
 	const renderTime = html`<p>Rendered ${Math.ceil(Date.now() - start)}ms</p>`;
 
-	const newGameButton = html`<button>Create new game</button>`;
+	const newGameButton = html`<button>New game</button>`;
 	newGameButton.onclick = (event) => {
 		event.preventDefault();
 		const form = document.getElementById("new-game-form");
@@ -77,7 +88,7 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 		window.location.href = url;
 	};
 	document.body.append(
-		html`<h2>New game settings</h2>`,
+		html`<h2>Game settings</h2>`,
 		html`<form id="new-game-form">
 			<fieldset>
 				<legend>Size</legend>
@@ -99,14 +110,14 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 				</label>
 			</fieldset>
 			<fieldset>
-				<legend>Mode</legend>
+				<legend>Style</legend>
 				<label>
-					<input type="radio" name="mode" value="normal" checked />
-					Normal
+					<input type="radio" name="mode" value="wilsons" checked />
+					Wilson’s
 				</label>
 				<label>
-					<input type="radio" name="mode" value="hard" />
-					Hard
+					<input type="radio" name="mode" value="prims" />
+					Prim’s
 				</label>
 			</fieldset>
 			${newGameButton}
@@ -114,6 +125,7 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 		html`<h2>About</h2>`,
 		puzzleTime,
 		renderTime,
+		html`<p>${branches} branches</p>`,
 		html`<p>
 			Inspired by <a href="https://hexapipes.vercel.app/">Hexapipes</a>
 		</p>`,
@@ -152,7 +164,7 @@ const loadConfig = (): Config => {
 	const config = {
 		seed,
 		size,
-		mode: validMode(mode) ? mode : "normal",
+		mode: validMode(mode) ? mode : "wilsons",
 	};
 	history.replaceState(
 		undefined,
