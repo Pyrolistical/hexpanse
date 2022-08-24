@@ -48,9 +48,13 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		working.set(startKey, start);
 		while (true) {
 			const current = path.at(-1)!.coordinate;
-			const neighbour = RandomNeighbour(size, current);
-			const neighbourKey = asCoordinateKey(neighbour.coordinate);
-			if (working.has(neighbourKey)) {
+			const { coordinate: neighbourCoordinate, direction } = RandomNeighbour(
+				size,
+				current
+			);
+			const neighbourKey = asCoordinateKey(neighbourCoordinate);
+			const looped = working.has(neighbourKey);
+			if (looped) {
 				const loopIndex = path.findIndex(({ key }) => key === neighbourKey) + 1;
 				for (let i = loopIndex; i < path.length; i++) {
 					const { key } = path[i]!;
@@ -58,25 +62,21 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 				}
 				path = path.slice(0, loopIndex);
 
-				// debugger;
 				continue;
 			} else {
-				const { forwards, backwards } = asConnections(neighbour.direction);
+				const { forwards, backwards } = asConnections(direction);
 				path.at(-1)!.forwards = forwards;
 				path.push({
 					key: neighbourKey,
-					coordinate: neighbour.coordinate,
+					coordinate: neighbourCoordinate,
 					forwards: 0,
 					backwards,
 				});
-				if (remaining.has(neighbourKey)) {
-					working.set(neighbourKey, neighbour.coordinate);
-					// debugger;
-					continue;
-				} else {
-					// debugger;
+				const end = !remaining.has(neighbourKey);
+				if (end) {
 					return path;
 				}
+				working.set(neighbourKey, neighbourCoordinate);
 			}
 		}
 	};
@@ -89,7 +89,6 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 	}
 
 	removeOne(remaining); // start
-
 	while (remaining.size > 0) {
 		const current = removeOne(remaining);
 		const path = loopErasedRandomWalk(current, remaining);

@@ -1,9 +1,4 @@
-import {
-	Coordinate,
-	Connection,
-	Orientation,
-	CoordinateKey,
-} from "../elements";
+import { Coordinate, Connection, Orientation } from "../elements";
 import Prims from "./prims";
 import Wilsons from "./wilsons";
 
@@ -171,15 +166,6 @@ export const asConnections = (
 		forwards: 0b100000 >> direction,
 		backwards: 0b100000 >> (direction + 3) % 6,
 	};
-};
-
-export const addConnection = (
-	solution: Record<CoordinateKey, DenormalConnection>,
-	key: CoordinateKey,
-	connection: DenormalConnection
-) => {
-	solution[key] ??= 0;
-	solution[key] |= connection;
 };
 
 export default function* (config: Config): Generator<Cell> {

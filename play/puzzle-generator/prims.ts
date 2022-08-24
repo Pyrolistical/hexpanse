@@ -14,7 +14,6 @@ import {
 	DenormalConnection,
 	ValidNeighbours,
 	asConnections,
-	addConnection,
 	normalizeConnection,
 	Neighbour,
 } from "./";
@@ -35,9 +34,18 @@ function* PartitionNeighbours(
 	}
 }
 
+const addConnection = (
+	solution: Record<CoordinateKey, DenormalConnection>,
+	key: CoordinateKey,
+	connection: DenormalConnection
+) => {
+	solution[key] ??= 0;
+	solution[key] |= connection;
+};
+
 // https://en.wikipedia.org/wiki/Prim%27s_algorithm
 export default function* ({ size, seed }: Config): Generator<Cell> {
-	const { chooseOne } = Random(seed);
+	const { chooseOne, removeOne } = Random(seed);
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
 	const solution: Record<CoordinateKey, DenormalConnection> = {};
 	const visited = new Set<CoordinateKey>();
@@ -53,18 +61,18 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		if (working.size === 0) {
 			throw new Error("working set unexpectedly empty");
 		}
-		const workingKey = chooseOne(working);
-		const neighbours = [
-			...PartitionNeighbours(size, working.get(workingKey)!, visited),
-		];
+		const current = removeOne(working);
+		const workingKey = asCoordinateKey(current);
+		const neighbours = [...PartitionNeighbours(size, current, visited)];
 		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
 		const {
 			neighbour: { coordinate: neighbourCoordinate, direction },
 		} = chooseOne(connectedNeighbours);
 
 		const { forwards, backwards } = asConnections(direction);
-		addConnection(solution, workingKey, forwards);
 		const neighbourKey = asCoordinateKey(neighbourCoordinate);
+
+		addConnection(solution, workingKey, forwards);
 		addConnection(solution, neighbourKey, backwards);
 
 		visited.add(workingKey);
@@ -73,7 +81,6 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		} of neighbours.filter(({ connected }) => !connected)) {
 			working.set(asCoordinateKey(coordinate), coordinate);
 		}
-		working.delete(workingKey);
 	}
 
 	for (const coordinate of coordinates) {
