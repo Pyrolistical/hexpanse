@@ -94,26 +94,37 @@ type Direction =
 	| 5; // -r
 export type Neighbour = { coordinate: Coordinate; direction: Direction };
 function* Neighbours({ q, r, s }: Coordinate): Generator<Neighbour> {
+	// q
 	yield {
 		coordinate: { q, r: r - 1, s: s + 1 },
 		direction: 0,
 	};
+
+	// -s
 	yield {
 		coordinate: { q: q + 1, r: r - 1, s },
 		direction: 1,
 	};
+
+	// r
 	yield {
 		coordinate: { q: q + 1, r, s: s - 1 },
 		direction: 2,
 	};
+
+	// -q
 	yield {
 		coordinate: { q, r: r + 1, s: s - 1 },
 		direction: 3,
 	};
+
+	// s
 	yield {
 		coordinate: { q: q - 1, r: r + 1, s },
 		direction: 4,
 	};
+
+	// -r
 	yield {
 		coordinate: { q: q - 1, r, s: s + 1 },
 		direction: 5,

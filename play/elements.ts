@@ -149,7 +149,7 @@ function assertOrientation(value: number): asserts value is Orientation {
 
 // 8-bit flag to indicate there is a connection in that cube coordinate direction
 const Connections = [
-	// q -s r -q s -r
+	// r -q s -r q -s
 	0b100000, // i
 
 	0b110000, // v

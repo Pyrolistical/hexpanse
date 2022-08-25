@@ -96,6 +96,41 @@ path.end {
 	stroke-linecap: round;
 }
 
+svg.game-over .cell line {
+	animation-name: pulseGameOverStroke;
+	animation-duration: 2s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-timing-function: linear;
+}
+svg.game-over .cell path.end {
+	animation-name: pulseGameOverFill;
+	animation-duration: 2s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-timing-function: linear;
+}
+
+@keyframes pulseGameOverStroke {
+	from {
+		stroke: white;
+	}
+
+	to {
+		stroke: gold;
+	}
+}
+
+@keyframes pulseGameOverFill {
+	from {
+		fill: white;
+	}
+
+	to {
+		fill: gold;
+	}
+}
+
 main {
 	width: 100%;
 	max-height: 100vh;

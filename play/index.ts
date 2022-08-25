@@ -57,6 +57,10 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 	start = Date.now();
 	const grid = Grid(main.element, cells, (cell) => {
+		if (gameOver) {
+			return;
+		}
+
 		const orientation = cell.rotateClockwise();
 		saveWorker.updateCell(cell.coordinate, orientation);
 	});
@@ -149,6 +153,12 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	);
 	assertInstanceOf(configuredModeInput, HTMLInputElement);
 	configuredModeInput.checked = true;
+};
+
+let gameOver = false;
+saveWorker.onGameOver = () => {
+	gameOver = true;
+	main.element.classList.add("game-over");
 };
 
 const loadConfig = (): Config => {
