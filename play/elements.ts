@@ -127,7 +127,22 @@ export const Main = ([
 		viewBox="0 0 ${width} ${height}"
 		preserveAspectRatio="xMidYMid meet"
 		draggable="false"
-	></svg>`;
+	>
+		<g transform="rotate(-60) translate(-125, 175) scale(1.3)">
+			<text
+				x="0"
+				y="0"
+				font-size="200%"
+				font-weight="bolder"
+				text-anchor="middle"
+			>
+				Hexpanse
+			</text>
+			<text x="0" y="30" font-size="100%" text-anchor="middle">
+				Goal: Connect everything
+			</text>
+		</g>
+	</svg>`;
 
 	return SvgComponent({
 		element,
