@@ -22,7 +22,7 @@ type Restored = {
 	config: Config;
 	state: State;
 };
-export const Colors = ["none", "red", "green", "blue"] as const;
+const Colors = ["none", "red", "green", "blue"] as const;
 export type Color = typeof Colors[number];
 type Coloring = {
 	type: "coloring";

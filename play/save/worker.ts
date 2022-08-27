@@ -16,7 +16,7 @@ import {
 	Connection,
 } from "../elements";
 
-import { Message, Reply, State, Colors, Color } from "./client";
+import { Message, Reply, State, Color } from "./client";
 
 const reply = (reply: Reply) => {
 	postMessage(reply);
@@ -225,6 +225,9 @@ const updateSpan = () => {
 			type: "game over",
 		});
 	}
+
+	// Duplicated Colors from client.ts in order to workaround https://github.com/vitejs/vite/issues/7015
+	const Colors = ["none", "red", "green", "blue"] as const;
 
 	const avaiableColors = new Set<Color>(Colors);
 	avaiableColors.delete("none");
