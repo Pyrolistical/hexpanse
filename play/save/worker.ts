@@ -239,22 +239,32 @@ const updateSpan = () => {
 		blue: new Set<CoordinateKey>(),
 	};
 	const sortedSpans = Object.values(spans).sort((a, b) => b.size - a.size);
-	const largestSpans = sortedSpans.slice(0, avaiableColors.size);
-	const uncoloredLargestSpans = [];
-	for (const span of largestSpans) {
-		const currentColor = mostCommonColor(span);
-		if (avaiableColors.has(currentColor)) {
-			colors[currentColor] = span;
-			avaiableColors.delete(currentColor);
-		} else {
-			uncoloredLargestSpans.push(span);
+	const uncoloredSpans = [];
+
+	for (const span of sortedSpans) {
+		if (span.size > 1) {
+			const currentColor = mostCommonColor(span);
+			if (avaiableColors.has(currentColor)) {
+				colors[currentColor] = span;
+				avaiableColors.delete(currentColor);
+				continue;
+			}
 		}
+		uncoloredSpans.push(span);
 	}
+
 	let i = 0;
 	for (const color of avaiableColors) {
-		colors[color] = uncoloredLargestSpans[i++]!;
+		if (i >= uncoloredSpans.length) {
+			break;
+		}
+		const span = uncoloredSpans[i++]!;
+		if (span.size <= 1) {
+			break;
+		}
+		colors[color] = span;
 	}
-	for (const span of sortedSpans.slice(avaiableColors.size)) {
+	for (const span of uncoloredSpans) {
 		for (const coodrinateKey of span) {
 			colors.none.add(coodrinateKey);
 		}
