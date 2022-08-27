@@ -16,7 +16,7 @@ import {
 	Connection,
 } from "../elements";
 
-import { Message, Reply, State, Colors } from "./client";
+import { Message, Reply, State, Colors, Color } from "./client";
 
 const reply = (reply: Reply) => {
 	postMessage(reply);
@@ -24,7 +24,6 @@ const reply = (reply: Reply) => {
 let config: Config;
 let key: string;
 let state: State;
-let nextColor = 0;
 onmessage = async ({ data }: MessageEvent<Message>) => {
 	switch (data.type) {
 		case "restore": {
@@ -42,6 +41,7 @@ onmessage = async ({ data }: MessageEvent<Message>) => {
 						coordinate,
 						orientation,
 						connection,
+						color: "none",
 					};
 				}
 				await store.setItem<State>(key, state);
@@ -154,6 +154,44 @@ const updateFacingNeighbours = (coordinateKey: CoordinateKey) => {
 	}
 };
 
+const mostCommonColor = (span: Set<CoordinateKey>): Color => {
+	const colorCount: Record<Color, number> = {
+		none: 0,
+		red: 0,
+		green: 0,
+		blue: 0,
+	};
+	for (const coordinateKey of span) {
+		const { color } = state[coordinateKey]!;
+		if (color) {
+			colorCount[color] = (colorCount[color] ?? 0) + 1;
+		}
+	}
+	const { color } = Object.entries(colorCount).reduce<{
+		color: Color;
+		count: number;
+	}>(
+		(highest, [color, count]) => {
+			if (highest.count > count) {
+				return highest;
+			}
+			return {
+				color: color as Color,
+				count,
+			};
+		},
+		{
+			color: "none",
+			count: 0,
+		}
+	);
+
+	return color;
+};
+
+const entries = <K extends string, V>(values: Record<K, V>): [K, V][] =>
+	Object.entries(values) as [K, V][];
+
 const updateSpan = () => {
 	let nextSpan = 0;
 	const spanByCoordinate: Record<CoordinateKey, number> = {};
@@ -186,5 +224,47 @@ const updateSpan = () => {
 		return reply({
 			type: "game over",
 		});
+	}
+
+	const avaiableColors = new Set<Color>(Colors);
+	avaiableColors.delete("none");
+
+	const colors: Record<Color, Set<CoordinateKey>> = {
+		none: new Set<CoordinateKey>(),
+		red: new Set<CoordinateKey>(),
+		green: new Set<CoordinateKey>(),
+		blue: new Set<CoordinateKey>(),
+	};
+	const sortedSpans = Object.values(spans).sort((a, b) => b.size - a.size);
+	const largestSpans = sortedSpans.slice(0, avaiableColors.size);
+	const uncoloredLargestSpans = [];
+	for (const span of largestSpans) {
+		const currentColor = mostCommonColor(span);
+		if (avaiableColors.has(currentColor)) {
+			colors[currentColor] = span;
+			avaiableColors.delete(currentColor);
+		} else {
+			uncoloredLargestSpans.push(span);
+		}
+	}
+	let i = 0;
+	for (const color of avaiableColors) {
+		colors[color] = uncoloredLargestSpans[i++]!;
+	}
+	for (const span of sortedSpans.slice(avaiableColors.size)) {
+		for (const coodrinateKey of span) {
+			colors.none.add(coodrinateKey);
+		}
+	}
+
+	reply({
+		type: "coloring",
+		colors,
+	});
+
+	for (const [color, coordinateKeys] of entries(colors)) {
+		for (const coordinateKey of coordinateKeys) {
+			state[coordinateKey]!.color = color;
+		}
 	}
 };

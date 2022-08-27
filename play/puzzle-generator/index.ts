@@ -44,14 +44,14 @@ export const normalizeConnection = (
 		case 0b1000:
 			return 0b110000; // v
 		case 0b0100:
-			return 0b101000; // c
+			return 0b101000; // C
 		case 0b0010:
 			return 0b100100; // l
 		case 0b0001:
-			return 0b101000; // c
+			return 0b101000; // C
 
 		case 0b1100:
-			return 0b111000; // e
+			return 0b111000; // E
 		case 0b0110:
 			return 0b101100; // y
 		case 0b0011:
@@ -64,13 +64,13 @@ export const normalizeConnection = (
 			return 0b101010; // tri
 
 		case 0b1110:
-			return 0b111100; // half
+			return 0b111100; // K
 		case 0b0111:
-			return 0b101110; // rake
+			return 0b101110; // Ψ
 		case 0b1011:
-			return 0b110110; // x
+			return 0b110110; // X
 		case 0b1101:
-			return 0b101110; // rake
+			return 0b101110; // Ψ
 
 		case 0b1111:
 			return 0b111110; // hat

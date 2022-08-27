@@ -153,19 +153,19 @@ const Connections = [
 	0b100000, // i
 
 	0b110000, // v
-	0b101000, // c
+	0b101000, // C
 	0b100100, // l
-	// 0b100010, // dupe c
+	// 0b100010, // dupe C
 
-	0b111000, // e
+	0b111000, // E
 	0b101100, // y
 	0b110100, // λ
 	0b101010, // tri
 
-	0b111100, // half
-	0b101110, // rake
-	0b110110, // x
-	// 0b111010, // dupe rake
+	0b111100, // K
+	0b101110, // Ψ
+	0b110110, // X
+	// 0b111010, // dupe Ψ
 
 	0b111110, // hat
 
@@ -198,7 +198,7 @@ const EdgeElement = (
 					transform="rotate(60)"
 				/>
 			</g>`;
-		case 0b101000: // c
+		case 0b101000: // C
 			return html`<g>
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
@@ -220,7 +220,7 @@ const EdgeElement = (
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case 0b111000: // e
+		case 0b111000: // E
 			return html`<g>
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
@@ -292,7 +292,7 @@ const EdgeElement = (
 					transform="rotate(240)"
 				/>
 			</g>`;
-		case 0b111100: // half
+		case 0b111100: // K
 			return html`<g>
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
@@ -317,7 +317,7 @@ const EdgeElement = (
 					transform="rotate(180)"
 				/>
 			</g>`;
-		case 0b101110: // rake
+		case 0b101110: // Ψ
 			return html`<g>
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line
@@ -342,7 +342,7 @@ const EdgeElement = (
 					transform="rotate(240)"
 				/>
 			</g>`;
-		case 0b110110: // x
+		case 0b110110: // X
 			return html`<g>
 				<line x1="0" y1="0" x2="${hexagonUnitHeight}" y2="0" />
 				<line

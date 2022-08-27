@@ -18,7 +18,7 @@ import {
 
 import { html } from "./component";
 import { Config, validMode } from "./puzzle-generator";
-import SaveWorker from "./save/client";
+import SaveWorker, { Color } from "./save/client";
 import { assertInstanceOf, assertString } from "../assert";
 
 const saveWorker = SaveWorker();
@@ -26,6 +26,7 @@ const saveWorker = SaveWorker();
 const width = 1000;
 const height = width * hexagonUnitHeight;
 const main = Main([width, height]);
+let grid: Grid;
 
 const cells: Cells = {};
 let start = Date.now();
@@ -56,7 +57,7 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	}
 	const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 	start = Date.now();
-	const grid = Grid(main.element, cells, (cell) => {
+	grid = Grid(main.element, cells, (cell) => {
 		if (gameOver) {
 			return;
 		}
@@ -153,6 +154,14 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	);
 	assertInstanceOf(configuredModeInput, HTMLInputElement);
 	configuredModeInput.checked = true;
+};
+
+saveWorker.onColoring = (coloring: Record<Color, Set<CoordinateKey>>) => {
+	for (const [color, coordinateKeys] of Object.entries(coloring)) {
+		for (const coordinateKey of coordinateKeys) {
+			grid.cells[coordinateKey]!.element.dataset["color"] = color;
+		}
+	}
 };
 
 let gameOver = false;

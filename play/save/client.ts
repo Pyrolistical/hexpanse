@@ -22,33 +22,23 @@ type Restored = {
 	config: Config;
 	state: State;
 };
-export const Colors = [
-	"yellow",
-	"orange",
-	"red",
-	"magenta",
-	"violet",
-	"blue",
-	"cyan",
-	"green",
-];
-type Color = typeof Colors[number];
-type PaintedCell = {
-	type: "painted cell";
-	coordinate: Coordinate;
-	color: Color;
+export const Colors = ["none", "red", "green", "blue"] as const;
+export type Color = typeof Colors[number];
+type Coloring = {
+	type: "coloring";
+	colors: Record<Color, Set<CoordinateKey>>;
 };
 type GameOver = {
 	type: "game over";
 };
-export type Reply = Restored | PaintedCell | GameOver;
+export type Reply = Restored | Coloring | GameOver;
 
 export type State = Record<CoordinateKey, CellState>;
 type CellState = {
 	coordinate: Coordinate;
 	orientation: Orientation;
 	connection: Connection;
-	color?: Color;
+	color: Color;
 };
 
 type SaveWorker = {
@@ -56,7 +46,7 @@ type SaveWorker = {
 	updateCell(coordinate: Coordinate, orientation: Orientation): void;
 
 	onRestored(config: Config, state: State): void;
-	onPaintedCell(coordinate: Coordinate, color: Color): void;
+	onColoring(colors: Record<Color, Set<CoordinateKey>>): void;
 	onGameOver(): void;
 };
 
@@ -87,8 +77,8 @@ export default (): SaveWorker => {
 			throw new Error("missing onRestored");
 		},
 
-		onPaintedCell() {
-			throw new Error("missing onPaintedCell");
+		onColoring() {
+			throw new Error("missing onColoring");
 		},
 
 		onGameOver() {
@@ -100,8 +90,8 @@ export default (): SaveWorker => {
 		switch (data.type) {
 			case "restored":
 				return saveWorker.onRestored(data.config, data.state);
-			case "painted cell":
-				return saveWorker.onPaintedCell(data.coordinate, data.color);
+			case "coloring":
+				return saveWorker.onColoring(data.colors);
 			case "game over":
 				return saveWorker.onGameOver();
 		}
