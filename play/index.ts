@@ -26,6 +26,9 @@ const saveWorker = SaveWorker();
 const width = 1000;
 const height = width * hexagonUnitHeight;
 const main = Main([width, height]);
+main.element.onclick = (event) => {
+	event.preventDefault();
+};
 let grid: Grid;
 
 const cells: Cells = {};

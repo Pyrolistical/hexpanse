@@ -80,6 +80,10 @@ a {
 	flex-wrap: wrap;
 }
 
+svg {
+	touch-action: manipulation;
+}
+
 .cell {
 	fill: var(--cell-background);
 }
