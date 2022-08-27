@@ -84,6 +84,11 @@ svg {
 	touch-action: manipulation;
 }
 
+svg text {
+	-webkit-user-select: none;
+	user-select: none;
+}
+
 .cell {
 	fill: var(--cell-background);
 }
