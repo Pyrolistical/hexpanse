@@ -265,11 +265,12 @@ const updateSpan = () => {
 		if (i >= uncoloredSpans.length) {
 			break;
 		}
-		const span = uncoloredSpans[i++]!;
+		const span = uncoloredSpans[i]!;
 		if (span.size <= 1) {
 			break;
 		}
 		colors[color] = span;
+		i += 1;
 	}
 
 	for (const span of uncoloredSpans.slice(i)) {
