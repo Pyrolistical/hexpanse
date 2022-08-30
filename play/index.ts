@@ -108,6 +108,101 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 		selectedCell().element.classList.add("selected");
 	};
 
+	const moveLeft = () => {
+		if (selected.q === -size || selected.s === size) {
+			if (selected.q === -size && selected.r === 0 && selected.s === size) {
+				return;
+			}
+			if (selected.r > 0) {
+				deselect();
+				selected.r -= 1;
+				selected.s += 1;
+				select();
+			} else {
+				deselect();
+				selected.q -= 1;
+				selected.r += 1;
+				select();
+			}
+			return;
+		}
+		deselect();
+		selected.q -= 1;
+		selected.s += 1;
+		select();
+	};
+	const moveRight = () => {
+		if (selected.q === size || selected.s === -size) {
+			if (selected.q === size && selected.r === 0 && selected.s === -size) {
+				return;
+			}
+			if (selected.r > 0) {
+				deselect();
+				selected.q += 1;
+				selected.r -= 1;
+				select();
+			} else {
+				deselect();
+				selected.r += 1;
+				selected.s -= 1;
+				select();
+			}
+			return;
+		}
+		deselect();
+		selected.q += 1;
+		selected.s -= 1;
+		select();
+	};
+	const moveUp = () => {
+		const noLeft = selected.r === -size || selected.s === size;
+		const noRight = selected.q === size || selected.r === -size;
+		if (noLeft && noRight) {
+			return;
+		}
+		if ((evenRow && !noLeft) || noRight) {
+			deselect();
+			selected.r -= 1;
+			selected.s += 1;
+			select();
+			evenRow = !evenRow;
+		} else {
+			deselect();
+			selected.q += 1;
+			selected.r -= 1;
+			select();
+			evenRow = !evenRow;
+		}
+	};
+
+	const moveDown = () => {
+		const noLeft = selected.q === -size || selected.r === size;
+		const noRight = selected.r === size || selected.s === -size;
+		if (noLeft && noRight) {
+			return;
+		}
+		if ((evenRow && !noLeft) || noRight) {
+			deselect();
+			selected.q -= 1;
+			selected.r += 1;
+			select();
+			evenRow = !evenRow;
+		} else {
+			deselect();
+			selected.r += 1;
+			selected.s -= 1;
+			select();
+			evenRow = !evenRow;
+		}
+	};
+	const rotateCounterClockwise = () => {
+		select();
+		rotateCell(selectedCell(), "counter-clockwise");
+	};
+	const rotateClockwise = () => {
+		select();
+		rotateCell(selectedCell(), "clockwise");
+	};
 	document.body.addEventListener("keydown", (event) => {
 		if (!allowedKeys.includes(event.key)) {
 			return;
@@ -115,83 +210,72 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 		event.preventDefault();
 		switch (event.key) {
 			case "ArrowLeft":
-				if (selected.q === -size || selected.s === size) {
-					return;
-				}
-				deselect();
-				selected.q -= 1;
-				selected.s += 1;
-				select();
-				return;
+				return moveLeft();
 			case "ArrowRight":
-				if (selected.q === size || selected.s === -size) {
-					return;
-				}
-				deselect();
-				selected.q += 1;
-				selected.s -= 1;
-				select();
-				return;
-			case "ArrowUp": {
-				const noLeft = selected.r === -size || selected.s === size;
-				const noRight = selected.q === size || selected.r === -size;
-				if (noLeft && noRight) {
-					return;
-				}
-				if ((evenRow && !noLeft) || noRight) {
-					deselect();
-					selected.r -= 1;
-					selected.s += 1;
-					select();
-					evenRow = !evenRow;
-					return;
-				} else {
-					deselect();
-					selected.q += 1;
-					selected.r -= 1;
-					select();
-					evenRow = !evenRow;
-					return;
-				}
-			}
-			case "ArrowDown": {
-				const noLeft = selected.q === -size || selected.r === size;
-				const noRight = selected.r === size || selected.s === -size;
-				if (noLeft && noRight) {
-					return;
-				}
-				if ((evenRow && !noLeft) || noRight) {
-					deselect();
-					selected.q -= 1;
-					selected.r += 1;
-					select();
-					evenRow = !evenRow;
-					return;
-				} else {
-					deselect();
-					selected.r += 1;
-					selected.s -= 1;
-					select();
-					evenRow = !evenRow;
-					return;
-				}
-			}
+				return moveRight();
+			case "ArrowUp":
+				return moveUp();
+			case "ArrowDown":
+				return moveDown();
 			case "z":
-				select();
-				return rotateCell(selectedCell(), "counter-clockwise");
+				return rotateCounterClockwise();
 			case "x":
 			case " ":
-				select();
-				return rotateCell(selectedCell(), "clockwise");
+				return rotateClockwise();
 		}
+	});
+
+	let gamepadPoll: number | undefined;
+	const processed: Record<string, DOMHighResTimeStamp> = {};
+	window.addEventListener("gamepadconnected", () => {
+		if (gamepadPoll) {
+			return;
+		}
+		gamepadPoll = window.setInterval(() => {
+			const gamepads: Gamepad[] = navigator
+				.getGamepads()
+				.filter((gamepad): gamepad is Gamepad => Boolean(gamepad));
+			if (gamepads.length === 0) {
+				clearInterval(gamepadPoll);
+				return;
+			}
+			for (const gamepad of gamepads) {
+				if (processed[gamepad.id] === gamepad.timestamp) {
+					continue;
+				}
+				if (
+					gamepad.buttons[0]!.pressed ||
+					gamepad.buttons[4]!.pressed ||
+					gamepad.buttons[6]!.pressed
+				) {
+					rotateCounterClockwise();
+				} else if (
+					gamepad.buttons[1]!.pressed ||
+					gamepad.buttons[5]!.pressed ||
+					gamepad.buttons[7]!.pressed
+				) {
+					rotateClockwise();
+				} else if (gamepad.buttons[9]!.pressed) {
+					startNewGame();
+				} else if (gamepad.buttons[12]!.pressed) {
+					moveUp();
+				} else if (gamepad.buttons[13]!.pressed) {
+					moveDown();
+				} else if (gamepad.buttons[14]!.pressed) {
+					moveLeft();
+				} else if (gamepad.buttons[15]!.pressed) {
+					moveRight();
+				}
+				processed[gamepad.id] = gamepad.timestamp;
+			}
+		}, 10);
 	});
 
 	document.body.append(html`<main>${main}</main>`);
 	const renderTime = html`<p>Rendered ${Math.ceil(Date.now() - start)}ms</p>`;
 
 	const newGameButton = html`<button>New game</button>`;
-	newGameButton.onclick = (event) => {
-		event.preventDefault();
+	const startNewGame = () => {
 		const form = document.getElementById("new-game-form");
 		assertInstanceOf(form, HTMLFormElement);
 		const { size, mode } = Object.fromEntries(new FormData(form).entries());
@@ -203,6 +287,10 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 		}).toString()}`;
 		console.log(url);
 		window.location.href = url;
+	};
+	newGameButton.onclick = (event) => {
+		event.preventDefault();
+		startNewGame();
 	};
 	document.body.append(
 		html`<h2>Game settings</h2>`,
