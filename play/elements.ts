@@ -149,6 +149,18 @@ export const Main = ([
 				Goal: Connect everything
 			</text>
 		</g>
+		<g transform="rotate(60) translate(625, -743) scale(1.3)">
+			<text x="0" y="0" font-size="150%" text-anchor="middle">Controls</text>
+			<text x="0" y="30" font-size="100%" text-anchor="middle">
+				Left mouse, x, space: ⟳
+			</text>
+			<text x="0" y="50" font-size="100%" text-anchor="middle">
+				Right mouse, z: ⟲
+			</text>
+			<text x="0" y="70" font-size="100%" text-anchor="middle">
+				Arrow keys: move
+			</text>
+		</g>
 	</svg>`;
 
 	return SvgComponent({
