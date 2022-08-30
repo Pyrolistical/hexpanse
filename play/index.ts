@@ -11,9 +11,12 @@ import {
 	hexagonUnitHeight,
 	Main,
 	Grid,
+	Coordinate,
 	CoordinateKey,
+	asCoordinateKey,
 	Cell,
 	Cells,
+	Rotation,
 } from "./elements";
 
 import { html } from "./component";
@@ -60,16 +63,20 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	}
 	const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 	start = Date.now();
-	grid = Grid(main.element, cells, (cell, direction) => {
+	const rotateCell = (cell: Cell, rotation: Rotation) => {
 		if (gameOver) {
 			return;
 		}
 
 		const orientation =
-			direction === "clockwise"
+			rotation === "clockwise"
 				? cell.rotateClockwise()
 				: cell.rotateCounterClockwise();
 		saveWorker.updateCell(cell.coordinate, orientation);
+	};
+	grid = Grid(main.element, cells, (cell, rotation) => {
+		deselect();
+		rotateCell(cell, rotation);
 	});
 	grid
 		.transformWith(main.element)
@@ -77,6 +84,107 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 		.scale(height / (size * 3 + 2));
 
 	grid.appendTo(main.element);
+
+	const allowedKeys = [
+		"ArrowLeft",
+		"ArrowRight",
+		"ArrowUp",
+		"ArrowDown",
+		"z",
+		"x",
+		" ",
+	];
+	let selected: Coordinate = {
+		q: 0,
+		r: 0,
+		s: 0,
+	};
+	let evenRow = true;
+	const selectedCell = (): Cell => grid.cells[asCoordinateKey(selected)]!;
+	const deselect = () => {
+		selectedCell().element.classList.remove("selected");
+	};
+	const select = () => {
+		selectedCell().element.classList.add("selected");
+	};
+
+	document.body.addEventListener("keydown", (event) => {
+		if (!allowedKeys.includes(event.key)) {
+			return;
+		}
+		event.preventDefault();
+		switch (event.key) {
+			case "ArrowLeft":
+				if (selected.q === -size || selected.s === size) {
+					return;
+				}
+				deselect();
+				selected.q -= 1;
+				selected.s += 1;
+				select();
+				return;
+			case "ArrowRight":
+				if (selected.q === size || selected.s === -size) {
+					return;
+				}
+				deselect();
+				selected.q += 1;
+				selected.s -= 1;
+				select();
+				return;
+			case "ArrowUp": {
+				const noLeft = selected.r === -size || selected.s === size;
+				const noRight = selected.q === size || selected.r === -size;
+				if (noLeft && noRight) {
+					return;
+				}
+				if ((evenRow && !noLeft) || noRight) {
+					deselect();
+					selected.r -= 1;
+					selected.s += 1;
+					select();
+					evenRow = !evenRow;
+					return;
+				} else {
+					deselect();
+					selected.q += 1;
+					selected.r -= 1;
+					select();
+					evenRow = !evenRow;
+					return;
+				}
+			}
+			case "ArrowDown": {
+				const noLeft = selected.q === -size || selected.r === size;
+				const noRight = selected.r === size || selected.s === -size;
+				if (noLeft && noRight) {
+					return;
+				}
+				if ((evenRow && !noLeft) || noRight) {
+					deselect();
+					selected.q -= 1;
+					selected.r += 1;
+					select();
+					evenRow = !evenRow;
+					return;
+				} else {
+					deselect();
+					selected.r += 1;
+					selected.s -= 1;
+					select();
+					evenRow = !evenRow;
+					return;
+				}
+			}
+			case "z":
+				select();
+				return rotateCell(selectedCell(), "counter-clockwise");
+			case "x":
+			case " ":
+				select();
+				return rotateCell(selectedCell(), "clockwise");
+		}
+	});
 
 	document.body.append(html`<main>${main}</main>`);
 	const renderTime = html`<p>Rendered ${Math.ceil(Date.now() - start)}ms</p>`;

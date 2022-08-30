@@ -72,7 +72,7 @@ export type Cells = Record<CoordinateKey, Cell>;
 export type Grid = SvgComponent<SVGGElement> & {
 	cells: Cells;
 };
-type Rotation = "clockwise" | "counter-clockwise";
+export type Rotation = "clockwise" | "counter-clockwise";
 export const Grid = (
 	root: SVGSVGElement,
 	cells: Cells,

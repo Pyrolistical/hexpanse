@@ -97,7 +97,7 @@ svg text {
 	transform: scale(0.855);
 }
 
-.cell:hover > path {
+.selected > path {
 	stroke: var(--base01);
 	stroke-width: 0.125;
 	stroke-dasharray: 0.125;
