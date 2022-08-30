@@ -22,6 +22,7 @@ export type Cell = SvgComponent<SVGElement> & {
 	connection: Connection;
 	valid: boolean;
 	rotateClockwise(): Orientation;
+	rotateCounterClockwise(): Orientation;
 };
 
 export const hexagonUnitHeight = Math.sqrt(3) / 2;
@@ -71,10 +72,11 @@ export type Cells = Record<CoordinateKey, Cell>;
 export type Grid = SvgComponent<SVGGElement> & {
 	cells: Cells;
 };
+type Rotation = "clockwise" | "counter-clockwise";
 export const Grid = (
 	root: SVGSVGElement,
 	cells: Cells,
-	onCellSelected: (cell: Cell) => void
+	onCellSelected: (cell: Cell, rotation: Rotation) => void
 ): Grid => {
 	const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
 	for (const cell of Object.values(cells)) {
@@ -97,16 +99,21 @@ export const Grid = (
 
 	assertInstanceOf(element, SVGGElement);
 	let lastButtons: number;
+	const LEFT_CLICK = 1;
+	const RIGHT_CLICK = 2;
+	element.addEventListener("contextmenu", (event) => event.preventDefault());
 	element.addEventListener("pointerdown", (event) => {
 		lastButtons = event.buttons;
 	});
 	element.addEventListener("pointerup", (event) => {
-		if (lastButtons !== 1) {
+		if (![LEFT_CLICK, RIGHT_CLICK].includes(lastButtons)) {
 			return;
 		}
+		const rotation =
+			lastButtons === LEFT_CLICK ? "clockwise" : "counter-clockwise";
 		for (const hit of event.composedPath()) {
 			if (isCell(hit)) {
-				return onCellSelected(hit.cell);
+				return onCellSelected(hit.cell, rotation);
 			}
 		}
 	});
@@ -494,7 +501,8 @@ export const Cell = (
 		coordinate,
 		rotateClockwise() {
 			element.classList.remove(`rotate${orientation}`);
-			element.classList.remove(`rotateTo${orientation}`);
+			element.classList.remove(`rotateClockwise${orientation}`);
+			element.classList.remove(`rotateCounterClockwise${orientation}`);
 			let newOrientation: number = orientation;
 			newOrientation += 60;
 			newOrientation %= 360;
@@ -502,7 +510,25 @@ export const Cell = (
 			orientation = newOrientation;
 
 			element.classList.add(`rotate${orientation}`);
-			element.classList.add(`rotateTo${orientation}`);
+			element.classList.add(`rotateClockwise${orientation}`);
+			return orientation;
+		},
+		rotateCounterClockwise() {
+			element.classList.remove(`rotate${orientation}`);
+			element.classList.remove(`rotateClockwise${orientation}`);
+			element.classList.remove(`rotateCounterClockwise${orientation}`);
+			let newOrientation: number = orientation;
+			if (newOrientation === 0) {
+				newOrientation = 300;
+			} else {
+				newOrientation -= 60;
+				newOrientation %= 360;
+			}
+			assertOrientation(newOrientation);
+			orientation = newOrientation;
+
+			element.classList.add(`rotate${orientation}`);
+			element.classList.add(`rotateCounterClockwise${orientation}`);
 			return orientation;
 		},
 	});

@@ -60,12 +60,15 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 	}
 	const puzzleTime = html`<p>Generated ${Math.ceil(Date.now() - start)}ms</p>`;
 	start = Date.now();
-	grid = Grid(main.element, cells, (cell) => {
+	grid = Grid(main.element, cells, (cell, direction) => {
 		if (gameOver) {
 			return;
 		}
 
-		const orientation = cell.rotateClockwise();
+		const orientation =
+			direction === "clockwise"
+				? cell.rotateClockwise()
+				: cell.rotateCounterClockwise();
 		saveWorker.updateCell(cell.coordinate, orientation);
 	});
 	grid
