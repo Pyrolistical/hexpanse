@@ -179,7 +179,7 @@ const loadConfig = (): Config => {
 	}
 	const searchParams = new URLSearchParams(window.location.search);
 	const seed = searchParams.get("seed") ?? uuid();
-	const size = Number.parseInt(searchParams.get("size") ?? "20");
+	const size = Number.parseInt(searchParams.get("size") ?? "5");
 	const mode = searchParams.get("mode");
 	const config = {
 		seed,
