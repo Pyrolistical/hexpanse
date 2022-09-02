@@ -276,19 +276,19 @@ var No=Object.defineProperty;var s=(r,e)=>No(r,"name",{value:e,configurable:!0})
 			<fieldset>
 				<legend>Size</legend>
 				<label>
-					<input type="radio" name="size" value="5" checked />
+					<input type="radio" name="size" value="2" checked />
 					Small
 				</label>
 				<label>
-					<input type="radio" name="size" value="10" />
+					<input type="radio" name="size" value="4" />
 					Medium
 				</label>
 				<label>
-					<input type="radio" name="size" value="15" />
+					<input type="radio" name="size" value="8" />
 					Large
 				</label>
 				<label>
-					<input type="radio" name="size" value="20" />
+					<input type="radio" name="size" value="16" />
 					Extra large
 				</label>
 			</fieldset>
@@ -313,4 +313,4 @@ var No=Object.defineProperty;var s=(r,e)=>No(r,"name",{value:e,configurable:!0})
 			>
 		</p>`,U`<p>
 			Author: <a href="https://twitter.com/pyrolistical">@pyrolistical</a>
-		</p>`);const T=document.querySelector(`#new-game-form input[name="size"][value="${r}"]`);T.checked=!0;const I=document.querySelector(`#new-game-form input[name="mode"][value="${e}"]`);I.checked=!0};Or.onColoring=r=>{for(const[e,t]of Object.entries(r))for(const n of t)xr.cells[n].element.dataset.color=e};let jo=!1;Or.onGameOver=()=>{jo=!0,nr.element.classList.add("game-over")};const ry=s(()=>{var c,f;window.location.hash===""&&history.replaceState(void 0,"","#");const r=new URLSearchParams(window.location.search),e=(c=r.get("seed"))!=null?c:_g(),t=Number.parseInt((f=r.get("size"))!=null?f:"5"),n=r.get("mode"),o={seed:e,size:t,mode:Zg(n)?n:"wilsons"};return history.replaceState(void 0,"",`?${new URLSearchParams({...o,size:String(t)}).toString()}`),o},"loadConfig"),ey=ry();Or.restore(ey);
+		</p>`);const T=document.querySelector(`#new-game-form input[name="size"][value="${r}"]`);T.checked=!0;const I=document.querySelector(`#new-game-form input[name="mode"][value="${e}"]`);I.checked=!0};Or.onColoring=r=>{for(const[e,t]of Object.entries(r))for(const n of t)xr.cells[n].element.dataset.color=e};let jo=!1;Or.onGameOver=()=>{jo=!0,nr.element.classList.add("game-over")};const ry=s(()=>{var c,f;window.location.hash===""&&history.replaceState(void 0,"","#");const r=new URLSearchParams(window.location.search),e=(c=r.get("seed"))!=null?c:_g(),t=Number.parseInt((f=r.get("size"))!=null?f:"2"),n=r.get("mode"),o={seed:e,size:t,mode:Zg(n)?n:"wilsons"};return history.replaceState(void 0,"",`?${new URLSearchParams({...o,size:String(t)}).toString()}`),o},"loadConfig"),ey=ry();Or.restore(ey);
