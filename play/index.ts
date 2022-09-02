@@ -298,19 +298,19 @@ saveWorker.onRestored = ({ size, mode }, state) => {
 			<fieldset>
 				<legend>Size</legend>
 				<label>
-					<input type="radio" name="size" value="5" checked />
+					<input type="radio" name="size" value="2" checked />
 					Small
 				</label>
 				<label>
-					<input type="radio" name="size" value="10" />
+					<input type="radio" name="size" value="4" />
 					Medium
 				</label>
 				<label>
-					<input type="radio" name="size" value="15" />
+					<input type="radio" name="size" value="8" />
 					Large
 				</label>
 				<label>
-					<input type="radio" name="size" value="20" />
+					<input type="radio" name="size" value="16" />
 					Extra large
 				</label>
 			</fieldset>
@@ -378,7 +378,7 @@ const loadConfig = (): Config => {
 	}
 	const searchParams = new URLSearchParams(window.location.search);
 	const seed = searchParams.get("seed") ?? uuid();
-	const size = Number.parseInt(searchParams.get("size") ?? "5");
+	const size = Number.parseInt(searchParams.get("size") ?? "2");
 	const mode = searchParams.get("mode");
 	const config = {
 		seed,
