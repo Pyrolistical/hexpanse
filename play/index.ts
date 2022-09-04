@@ -83,23 +83,30 @@ type PointerDown = {
 
 import PuzzleGenerator from "./puzzle-generator";
 
-type Coordinate = {
+export type Coordinate = {
 	q: number;
 	r: number;
 	s: number;
 };
-type CoordinateKey = `${Coordinate["q"]} ${Coordinate["r"]} ${Coordinate["s"]}`;
-const asCoordinateKey = ({ q, r, s }: Coordinate): CoordinateKey =>
+export type CoordinateKey =
+	`${Coordinate["q"]} ${Coordinate["r"]} ${Coordinate["s"]}`;
+export const asCoordinateKey = ({ q, r, s }: Coordinate): CoordinateKey =>
 	`${q} ${r} ${s}`;
 
+type Milliseconds = number;
 type Cell = {
 	coordinate: Coordinate;
-	orientation: Orientation;
+	orientation: {
+		value: Orientation;
+		animate: "clockwise" | "counter-clockwise";
+		startTime: DOMHighResTimeStamp;
+		duration: Milliseconds;
+	};
 	connection: Connection;
 };
 
-const Orientations = [0, 60, 120, 180, 240, 300] as const;
-type Orientation = typeof Orientations[number];
+export const Orientations = [0, 60, 120, 180, 240, 300] as const;
+export type Orientation = typeof Orientations[number];
 
 // 8-bit flag to indicate there is a connection in that cube coordinate direction
 const Connections = [
@@ -125,11 +132,16 @@ const Connections = [
 
 	0b111111, // star
 ] as const;
-type Connection = typeof Connections[number];
+export type Connection = typeof Connections[number];
 type Cells = Record<CoordinateKey, Cell>;
 
+const lerp = (t: number, a: number, b: number): number => {
+	return (1 - t) * a + t * b;
+};
+
 const drawCell = (
-	connection: Connection,
+	time: DOMHighResTimeStamp,
+	{ orientation, connection }: Cell,
 	pointerDown: PointerDown | undefined
 ): boolean => {
 	ctx.save();
@@ -145,6 +157,19 @@ const drawCell = (
 	ctx.restore();
 
 	ctx.save();
+	if (orientation.animate === "clockwise") {
+		const t = Math.min(
+			(time - orientation.startTime) / orientation.duration,
+			1
+		);
+		ctx.rotate(
+			(lerp(t, orientation.value - 60, orientation.value) * Math.PI) / 180
+		);
+		if (t < 1) {
+			draw();
+		}
+	} else {
+	}
 	ctx.fillStyle = cellForeground;
 	ctx.strokeStyle = cellForeground;
 	switch (connection) {
@@ -446,7 +471,7 @@ l ${-hexagonUnitHeight} -0.5
 z`);
 const GameLoop =
 	(memory: Memory) =>
-	([width, height]: Dimension, events: Event[]) => {
+	(time: DOMHighResTimeStamp, [width, height]: Dimension, events: Event[]) => {
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
@@ -463,7 +488,12 @@ const GameLoop =
 			)) {
 				cells[asCoordinateKey(coordinate)] = {
 					coordinate,
-					orientation,
+					orientation: {
+						value: orientation,
+						animate: "clockwise",
+						startTime: 0,
+						duration: 250,
+					},
 					connection,
 				};
 			}
@@ -480,11 +510,10 @@ const GameLoop =
 				const cells: Cells = memory["cells"];
 				ctx.fillStyle = cellBackground;
 				const pointerDown = events.find(({ type }) => type === "pointerdown");
-				for (const {
-					coordinate: { q, r, s },
-					orientation,
-					connection,
-				} of Object.values(cells)) {
+				for (const cell of Object.values(cells)) {
+					const {
+						coordinate: { q, r },
+					} = cell;
 					// Q basis [Math.sqrt(3), 0]
 					// R basis [Math.sqrt(3) / 2, 3 / 2]
 					// [x, y] = Q basis * q + R basis * r
@@ -492,12 +521,11 @@ const GameLoop =
 					const y = (3 / 2) * r;
 					ctx.save();
 					ctx.translate(x, y);
-					ctx.rotate((orientation * Math.PI) / 180);
-					if (drawCell(connection, pointerDown)) {
-						const { orientation } =
-							memory["cells"][asCoordinateKey({ q, r, s })];
-						memory["cells"][asCoordinateKey({ q, r, s })].orientation =
-							(orientation + 60) % 360;
+					if (drawCell(time, cell, pointerDown)) {
+						cell.orientation.value += 60;
+						cell.orientation.value %= 360;
+						cell.orientation.animate = "clockwise";
+						cell.orientation.startTime = time;
 						draw();
 					}
 					ctx.restore();
@@ -515,10 +543,10 @@ const draw = () => {
 	if (raf) {
 		return;
 	}
-	raf = requestAnimationFrame(() => {
+	raf = requestAnimationFrame((time) => {
 		raf = undefined;
 		const { width, height } = canvas;
-		gameLoop([width, height], events);
+		gameLoop(time, [width, height], events);
 		events.length = 0;
 	});
 };

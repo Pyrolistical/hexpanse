@@ -3,7 +3,7 @@ import {
 	CoordinateKey,
 	asCoordinateKey,
 	Orientations,
-} from "../elements";
+} from "../index";
 
 import Random from "../random";
 

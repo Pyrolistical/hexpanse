@@ -1,4 +1,4 @@
-import { Coordinate, Connection, Orientation } from "../elements";
+import { Coordinate, Connection, Orientation } from "../index";
 import Prims from "./prims";
 import Wilsons from "./wilsons";
 
