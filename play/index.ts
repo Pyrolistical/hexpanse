@@ -33,9 +33,6 @@ const resizeObserver = new ResizeObserver(
 				canvas.style.height = `${cssHeight}px`;
 				canvas.width = canvasWidth;
 				canvas.height = canvasHeight;
-
-				// ctx transform is reset when canvas width/height is changed
-				ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 				draw();
 			}
 		},
@@ -44,7 +41,7 @@ const resizeObserver = new ResizeObserver(
 );
 resizeObserver.observe(container);
 
-const pointerToCanvasSpace = ({ clientX, clientY }: PointerEvent) => {
+const pointerToCanvasSpace = ({ clientX, clientY }: PointerEvent): Position => {
 	const { width: canvasWidth, height: canvasHeight } = canvas;
 	const {
 		top,
@@ -65,8 +62,24 @@ const pointerToCanvasSpace = ({ clientX, clientY }: PointerEvent) => {
 	return [canvasX, canvasY];
 };
 
+canvas.onpointerdown = (event) => {
+	events.push({
+		type: "pointerdown",
+		position: pointerToCanvasSpace(event),
+		buttons: event.buttons,
+	});
+	draw();
+};
+
 type Dimension = [number, number];
 type Memory = Record<string, any>;
+type Position = [number, number];
+type Event = PointerDown;
+type PointerDown = {
+	type: "pointerdown";
+	position: Position;
+	buttons: PointerEvent["buttons"];
+};
 
 import PuzzleGenerator from "./puzzle-generator";
 
@@ -115,41 +128,330 @@ const Connections = [
 type Connection = typeof Connections[number];
 type Cells = Record<CoordinateKey, Cell>;
 
+const drawCell = (
+	connection: Connection,
+	pointerDown: PointerDown | undefined
+): boolean => {
+	ctx.save();
+	ctx.scale(0.855, 0.855);
+	let clicked = false;
+	if (pointerDown) {
+		const {
+			position: [x, y],
+		} = pointerDown;
+		console.log(x, y);
+		clicked = ctx.isPointInPath(hexagon, x, y);
+	}
+	ctx.fill(hexagon);
+	ctx.restore();
+
+	ctx.save();
+	ctx.fillStyle = cellForeground;
+	ctx.strokeStyle = cellForeground;
+	switch (connection) {
+		case 0b100000 /* i */:
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.restore();
+
+			ctx.save();
+			ctx.scale(0.25, 0.25);
+			ctx.fill(hexagon);
+			ctx.restore();
+			break;
+		case 0b110000: // v
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b101000: // C
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((120 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b100100: // l
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(-hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b111000: // E
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b101100: // y
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(-hexagonUnitHeight, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b110100: // λ
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(-hexagonUnitHeight, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b101010: // tri
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((120 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((120 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b111100: // K
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b101110: // Ψ
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((120 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b110110: // X
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((120 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b111110: // hat
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+		case 0b111111: // star
+			ctx.save();
+			ctx.lineWidth = 0.25;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(hexagonUnitHeight, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.rotate((60 * Math.PI) / 180);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(hexagonUnitHeight, 0);
+			ctx.stroke();
+			ctx.restore();
+			break;
+	}
+	ctx.restore();
+
+	return clicked;
+};
+const base03 = "#002b36";
+const base02 = "#073642";
+const base01 = "#586e75";
+const base00 = "#657b83";
+const base0 = "#839496";
+const base1 = "#93a1a1";
+const base2 = "#eee8d5";
+const base3 = "#fdf6e3";
+const yellow = "#b58900";
+const orange = "#cb4b16";
+const red = "#dc322f";
+const magenta = "#d33682";
+const violet = "#6c71c4";
+const blue = "#268bd2";
+const cyan = "#2aa198";
+const green = "#859900";
+const background = base03;
+const cellBackground = base02;
+const cellForeground = base0;
+const hexagonUnitHeight = Math.sqrt(3) / 2;
+const hexagon = new Path2D(`m ${-hexagonUnitHeight} -0.5
+l  ${hexagonUnitHeight} -0.5
+l  ${hexagonUnitHeight}  0.5
+l 0                   1
+l ${-hexagonUnitHeight}  0.5
+l ${-hexagonUnitHeight} -0.5
+z`);
 const GameLoop =
 	(memory: Memory) =>
-	([width, height]: Dimension) => {
-		const base03 = "#002b36";
-		const base02 = "#073642";
-		const base01 = "#586e75";
-		const base00 = "#657b83";
-		const base0 = "#839496";
-		const base1 = "#93a1a1";
-		const base2 = "#eee8d5";
-		const base3 = "#fdf6e3";
-		const yellow = "#b58900";
-		const orange = "#cb4b16";
-		const red = "#dc322f";
-		const magenta = "#d33682";
-		const violet = "#6c71c4";
-		const blue = "#268bd2";
-		const cyan = "#2aa198";
-		const green = "#859900";
-		const background = base03;
-		const cellBackground = base02;
-		const cellForeground = base0;
-		const hexagonUnitHeight = Math.sqrt(3) / 2;
-		const hexagon = new Path2D(`m ${-hexagonUnitHeight} -0.5
-    l  ${hexagonUnitHeight} -0.5
-    l  ${hexagonUnitHeight}  0.5
-    l 0                   1
-    l ${-hexagonUnitHeight}  0.5
-    l ${-hexagonUnitHeight} -0.5
-    z`);
-
+	([width, height]: Dimension, events: Event[]) => {
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 5;
+		const size = 1;
 		if (!memory["state"]) {
 			const cells: Cells = {};
 			const config = {
@@ -178,8 +480,9 @@ const GameLoop =
 				ctx.scale(scale, scale);
 				const cells: Cells = memory["cells"];
 				ctx.fillStyle = cellBackground;
+				const pointerDown = events.find(({ type }) => type === "pointerdown");
 				for (const {
-					coordinate: { q, r },
+					coordinate: { q, r, s },
 					orientation,
 					connection,
 				} of Object.values(cells)) {
@@ -190,284 +493,10 @@ const GameLoop =
 					const y = (3 / 2) * r;
 					ctx.save();
 					ctx.translate(x, y);
-
-					ctx.save();
-					ctx.scale(0.855, 0.855);
-					ctx.fill(hexagon);
-					ctx.restore();
-
-					ctx.save();
-					ctx.fillStyle = cellForeground;
-					ctx.strokeStyle = cellForeground;
 					ctx.rotate((orientation * Math.PI) / 180);
-					switch (connection) {
-						case 0b100000: /* i */ {
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.restore();
-
-							ctx.save();
-							ctx.scale(0.25, 0.25);
-							ctx.fill(hexagon);
-							ctx.restore();
-							break;
-						}
-						case 0b110000: // v
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b101000: // C
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((120 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b100100: // l
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(-hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b111000: // E
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b101100: // y
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(-hexagonUnitHeight, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b110100: // λ
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(-hexagonUnitHeight, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b101010: // tri
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((120 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((120 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b111100: // K
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b101110: // Ψ
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((120 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b110110: // X
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((120 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b111110: // hat
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
-						case 0b111111: // star
-							ctx.save();
-							ctx.lineWidth = 0.25;
-							ctx.lineCap = "round";
-							ctx.beginPath();
-							ctx.moveTo(hexagonUnitHeight, 0);
-							ctx.lineTo(0, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.beginPath();
-							ctx.rotate((60 * Math.PI) / 180);
-							ctx.moveTo(0, 0);
-							ctx.lineTo(hexagonUnitHeight, 0);
-							ctx.stroke();
-							ctx.restore();
-							break;
+					if (drawCell(connection, pointerDown)) {
+						console.log(q, r, s);
 					}
-					ctx.restore();
 					ctx.restore();
 				}
 				ctx.restore();
@@ -478,16 +507,15 @@ const GameLoop =
 
 const gameLoop = GameLoop({});
 let raf: number | undefined;
+const events: Event[] = [];
 const draw = () => {
 	if (raf) {
 		return;
 	}
 	raf = requestAnimationFrame(() => {
 		const { width, height } = canvas;
-		gameLoop([
-			width / window.devicePixelRatio,
-			height / window.devicePixelRatio,
-		]);
+		gameLoop([width, height], events);
 		raf = undefined;
+		events.length = 0;
 	});
 };
