@@ -139,7 +139,6 @@ const drawCell = (
 		const {
 			position: [x, y],
 		} = pointerDown;
-		console.log(x, y);
 		clicked = ctx.isPointInPath(hexagon, x, y);
 	}
 	ctx.fill(hexagon);
@@ -495,7 +494,11 @@ const GameLoop =
 					ctx.translate(x, y);
 					ctx.rotate((orientation * Math.PI) / 180);
 					if (drawCell(connection, pointerDown)) {
-						console.log(q, r, s);
+						const { orientation } =
+							memory["cells"][asCoordinateKey({ q, r, s })];
+						memory["cells"][asCoordinateKey({ q, r, s })].orientation =
+							(orientation + 60) % 360;
+						draw();
 					}
 					ctx.restore();
 				}
@@ -513,9 +516,9 @@ const draw = () => {
 		return;
 	}
 	raf = requestAnimationFrame(() => {
+		raf = undefined;
 		const { width, height } = canvas;
 		gameLoop([width, height], events);
-		raf = undefined;
 		events.length = 0;
 	});
 };
