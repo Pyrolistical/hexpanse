@@ -144,11 +144,7 @@ const lerp = (t: number, a: number, b: number): number => {
 	return (1 - t) * a + t * b;
 };
 
-const drawCell = (
-	time: DOMHighResTimeStamp,
-	{ orientation, connection, color }: Cell,
-	pointerDown: PointerDown | undefined
-): boolean => {
+const drawCellBackground = (pointerDown?: PointerDown | undefined): boolean => {
 	ctx.save();
 	ctx.scale(0.855, 0.855);
 	let clicked = false;
@@ -160,20 +156,31 @@ const drawCell = (
 	}
 	ctx.fill(hexagon);
 	ctx.restore();
+	return clicked;
+};
+
+const drawCell = (
+	time: DOMHighResTimeStamp,
+	{ orientation, connection, color }: Cell,
+	pointerDown: PointerDown | undefined
+): boolean => {
+	const clicked = drawCellBackground(pointerDown);
 
 	ctx.save();
-	if (orientation.animate === "clockwise") {
-		const t = Math.min(
-			(time - orientation.startTime) / orientation.duration,
-			1
-		);
-		ctx.rotate(
-			(lerp(t, orientation.value - 60, orientation.value) * Math.PI) / 180
-		);
-		if (t < 1) {
-			draw();
-		}
-	} else {
+	const t = Math.min((time - orientation.startTime) / orientation.duration, 1);
+	ctx.rotate(
+		(lerp(
+			t,
+			orientation.animate === "clockwise"
+				? orientation.value - 60
+				: orientation.value + 60,
+			orientation.value
+		) *
+			Math.PI) /
+			180
+	);
+	if (t < 1) {
+		draw();
 	}
 	switch (color) {
 		case "none":
@@ -189,6 +196,26 @@ const drawCell = (
 			ctx.fillStyle = ctx.strokeStyle = blue;
 			break;
 	}
+	drawEdges(connection);
+	ctx.restore();
+
+	return clicked;
+};
+
+const drawGameOverCell = (
+	time: DOMHighResTimeStamp,
+	{ orientation, connection }: Cell
+) => {
+	drawCellBackground();
+
+	ctx.save();
+	ctx.rotate((orientation.value * Math.PI) / 180);
+	ctx.fillStyle = ctx.strokeStyle = "gold";
+	drawEdges(connection);
+	ctx.restore();
+};
+
+const drawEdges = (connection: Connection) => {
 	switch (connection) {
 		case 0b100000 /* i */:
 			ctx.save();
@@ -411,10 +438,8 @@ const drawCell = (
 			ctx.restore();
 			break;
 	}
-	ctx.restore();
-
-	return clicked;
 };
+
 const base03 = "#002b36";
 const base02 = "#073642";
 const base01 = "#586e75";
@@ -435,13 +460,15 @@ const background = base03;
 const cellBackground = base02;
 const cellForeground = base0;
 const hexagonUnitHeight = Math.sqrt(3) / 2;
-const hexagon = new Path2D(`m ${-hexagonUnitHeight} -0.5
-l  ${hexagonUnitHeight} -0.5
-l  ${hexagonUnitHeight}  0.5
-l 0                   1
-l ${-hexagonUnitHeight}  0.5
-l ${-hexagonUnitHeight} -0.5
-z`);
+const hexagon = new Path2D(`
+  m ${-hexagonUnitHeight} -0.5
+  l  ${hexagonUnitHeight} -0.5
+  l  ${hexagonUnitHeight}  0.5
+  l                     0    1
+  l ${-hexagonUnitHeight}  0.5
+  l ${-hexagonUnitHeight} -0.5
+  z
+`);
 
 const mostCommonColor = (cells: Cells, span: Set<CoordinateKey>): Color => {
 	const colorCount: Record<Color, number> = {
@@ -452,9 +479,8 @@ const mostCommonColor = (cells: Cells, span: Set<CoordinateKey>): Color => {
 	};
 	for (const coordinateKey of span) {
 		const { color } = cells[coordinateKey]!;
-		if (color) {
-			colorCount[color] = (colorCount[color] ?? 0) + 1;
-		}
+		colorCount[color] ??= 0;
+		colorCount[color] += 1;
 	}
 	const { color } = Object.entries(colorCount).reduce<{
 		color: Color;
@@ -481,11 +507,12 @@ function assertCoordinateKey(value: string): asserts value is CoordinateKey {}
 
 const entries = <K extends string, V>(values: Record<K, V>): [K, V][] =>
 	Object.entries(values) as [K, V][];
-
-const updateColors = (
+type FacingNeighboursByCoordinate = Record<CoordinateKey, Set<CoordinateKey>>;
+type Spans = Record<number, Set<CoordinateKey>>;
+const calculateSpans = (
 	cells: Cells,
-	facingNeighboursByCoordinate: Record<CoordinateKey, Set<CoordinateKey>>
-) => {
+	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
+): Spans => {
 	let nextSpan = 0;
 	const spanByCoordinate: Record<CoordinateKey, number> = {};
 	const floodFill = (coordinateKey: CoordinateKey, span: number) => {
@@ -507,18 +534,16 @@ const updateColors = (
 		assertCoordinateKey(coordinateKey);
 		floodFill(coordinateKey, ++nextSpan);
 	}
-	const spans: Record<number, Set<CoordinateKey>> = {};
+	const spans: Spans = {};
 	for (const [coordinateKey, span] of Object.entries(spanByCoordinate)) {
 		assertCoordinateKey(coordinateKey);
 		spans[span] ??= new Set<CoordinateKey>();
 		spans[span]!.add(coordinateKey);
 	}
-	if (Object.values(spans).length === 1) {
-		return console.log({
-			type: "game over",
-		});
-	}
+	return spans;
+};
 
+const updateColors = (cells: Cells, spans: Spans) => {
 	const avaiableColors = new Set<Color>(Colors);
 	avaiableColors.delete("none");
 
@@ -638,7 +663,7 @@ function* Neighbours({
 const updateFacingNeighbours = (
 	coordinateKey: CoordinateKey,
 	cells: Cells,
-	facingNeighboursByCoordinate: Record<CoordinateKey, Set<CoordinateKey>>
+	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
 ) => {
 	const cell = cells[coordinateKey]!;
 	for (const neighbour of Neighbours(cell)) {
@@ -658,7 +683,7 @@ const GameLoop =
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 5;
+		const size = 1;
 		if (!memory["state"]) {
 			const cells: Cells = {};
 			const config = {
@@ -693,7 +718,8 @@ const GameLoop =
 				);
 			}
 			memory["facingNeighboursByCoordinate"] = facingNeighboursByCoordinate;
-			updateColors(cells, facingNeighboursByCoordinate);
+			const spans = calculateSpans(cells, facingNeighboursByCoordinate);
+			updateColors(cells, spans);
 		}
 
 		switch (memory["state"]) {
@@ -731,9 +757,40 @@ const GameLoop =
 							cells,
 							facingNeighboursByCoordinate
 						);
-						updateColors(cells, facingNeighboursByCoordinate);
+						const spans = calculateSpans(cells, facingNeighboursByCoordinate);
+						if (Object.values(spans).length === 1) {
+							memory["state"] = "game over";
+						} else {
+							updateColors(cells, spans);
+						}
 						draw();
 					}
+					ctx.restore();
+				}
+				ctx.restore();
+				break;
+			}
+
+			case "game over": {
+				ctx.save();
+				ctx.translate(width / 2, height / 2);
+				const scale = height / (2 * (2 * size * 0.75 + 1));
+				ctx.scale(scale, scale);
+				const cells: Cells = memory["cells"];
+				ctx.fillStyle = cellBackground;
+				for (const [coordinateKey, cell] of Object.entries(cells)) {
+					assertCoordinateKey(coordinateKey);
+					const {
+						coordinate: { q, r },
+					} = cell;
+					// Q basis [Math.sqrt(3), 0]
+					// R basis [Math.sqrt(3) / 2, 3 / 2]
+					// [x, y] = Q basis * q + R basis * r
+					const x = 2 * hexagonUnitHeight * q + hexagonUnitHeight * r;
+					const y = (3 / 2) * r;
+					ctx.save();
+					ctx.translate(x, y);
+					drawGameOverCell(time, cell);
 					ctx.restore();
 				}
 				ctx.restore();
