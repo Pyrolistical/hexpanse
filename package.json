@@ -22,11 +22,13 @@
     "core-js": "3.24.1",
     "fast-json-stable-stringify": "2.1.0",
     "localforage": "1.10.0",
+    "lodash-es": "4.17.21",
     "sanitize.css": "13.0.0",
     "seedrandom": "3.0.5",
     "uuid": "8.3.2"
   },
   "devDependencies": {
+    "@types/lodash-es": "4.17.6",
     "@types/seedrandom": "3.0.2",
     "@types/uuid": "8.3.4",
     "prettier": "2.7.1",

@@ -1,6 +1,6 @@
 import { assertInstanceOf } from "../assert";
 
-import { SvgComponent, svg as html } from "./component";
+import { Component, html } from "./component";
 
 // cube coordinates https://www.redblobgames.com/grids/hexagons/#coordinates
 type Axis = number;
@@ -125,48 +125,6 @@ export const Grid = (
 };
 
 type Dimension = [number, number];
-export const Main = ([
-	width,
-	height,
-]: Dimension): SvgComponent<SVGSVGElement> => {
-	const element = html<SVGSVGElement>`<svg
-		xmlns="http://www.w3.org/2000/svg"
-		viewBox="0 0 ${width} ${height}"
-		preserveAspectRatio="xMidYMid meet"
-		draggable="false"
-	>
-		<g transform="rotate(-60) translate(-125, 175) scale(1.3)">
-			<text
-				x="0"
-				y="0"
-				font-size="200%"
-				font-weight="bolder"
-				text-anchor="middle"
-			>
-				Hexpanse
-			</text>
-			<text x="0" y="30" font-size="100%" text-anchor="middle">
-				Goal: Connect everything
-			</text>
-		</g>
-		<g transform="rotate(60) translate(625, -743) scale(1.3)">
-			<text x="0" y="0" font-size="150%" text-anchor="middle">Controls</text>
-			<text x="0" y="30" font-size="100%" text-anchor="middle">
-				Left mouse, x, space: ⟳
-			</text>
-			<text x="0" y="50" font-size="100%" text-anchor="middle">
-				Right mouse, z: ⟲
-			</text>
-			<text x="0" y="70" font-size="100%" text-anchor="middle">
-				Arrow keys: move
-			</text>
-		</g>
-	</svg>`;
-
-	return SvgComponent({
-		element,
-	});
-};
 
 // degrees on a circle at 60 intervals
 export const Orientations = [0, 60, 120, 180, 240, 300] as const;
