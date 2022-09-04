@@ -206,15 +206,12 @@ const drawCell = (
 	return clicked;
 };
 
-const drawGameOverCell = (
-	time: DOMHighResTimeStamp,
-	{ orientation, connection }: Cell
-) => {
+const drawGameOverCell = ({ orientation, connection }: Cell, l: number) => {
 	drawCellBackground();
 
 	ctx.save();
 	ctx.rotate((orientation.value * Math.PI) / 180);
-	ctx.fillStyle = ctx.strokeStyle = "gold";
+	ctx.fillStyle = ctx.strokeStyle = `hsl(51deg 100% ${l}%)`;
 	drawEdges(connection);
 	ctx.restore();
 };
@@ -782,6 +779,8 @@ const GameLoop =
 				ctx.scale(scale, scale);
 				const cells: Cells = memory["cells"];
 				ctx.fillStyle = cellBackground;
+				const t = (Math.cos(Math.PI * (time / 2000)) + 1) / 2;
+				const l = Math.round(lerp(t, 50, 100));
 				for (const [coordinateKey, cell] of Object.entries(cells)) {
 					assertCoordinateKey(coordinateKey);
 					const {
@@ -794,10 +793,11 @@ const GameLoop =
 					const y = (3 / 2) * r;
 					ctx.save();
 					ctx.translate(x, y);
-					drawGameOverCell(time, cell);
+					drawGameOverCell(cell, l);
 					ctx.restore();
 				}
 				ctx.restore();
+				draw();
 				break;
 			}
 		}
