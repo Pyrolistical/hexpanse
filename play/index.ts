@@ -159,6 +159,8 @@ const drawCellBackground = (pointerDown?: PointerDown | undefined): boolean => {
 	return clicked;
 };
 
+import BezierEasing from "bezier-easing";
+const easing = BezierEasing(0.25, 0.1, 0.25, 1);
 const drawCell = (
 	time: DOMHighResTimeStamp,
 	{ orientation, connection, color }: Cell,
@@ -167,7 +169,9 @@ const drawCell = (
 	const clicked = drawCellBackground(pointerDown);
 
 	ctx.save();
-	const t = Math.min((time - orientation.startTime) / orientation.duration, 1);
+	const t = easing(
+		Math.min((time - orientation.startTime) / orientation.duration, 1)
+	);
 	ctx.rotate(
 		(lerp(
 			t,

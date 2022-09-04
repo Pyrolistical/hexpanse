@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Pyrolistical/hexpanse#readme",
   "dependencies": {
+    "bezier-easing": "2.1.0",
     "core-js": "3.24.1",
     "fast-json-stable-stringify": "2.1.0",
     "localforage": "1.10.0",
