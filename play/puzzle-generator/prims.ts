@@ -3,7 +3,7 @@ import {
 	CoordinateKey,
 	asCoordinateKey,
 	Orientations,
-} from "../index";
+} from "../game-loop";
 
 import Random from "../random";
 

@@ -1,4 +1,4 @@
-import { Coordinate, Connection, Orientation } from "../index";
+import { Coordinate, Connection, Orientation } from "../game-loop";
 import Prims from "./prims";
 import Wilsons from "./wilsons";
 
