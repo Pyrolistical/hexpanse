@@ -150,20 +150,22 @@ export const ValidNeighbours = (
 		return true;
 	});
 
-export function* CoordinatesGenerator(size: number): Generator<Coordinate> {
+export const CoordinatesGenerator = (size: number): Coordinate[] => {
+	const coordinates = [];
 	for (let q = -size; q <= size; q++) {
 		for (let r = -size; r <= size; r++) {
 			const s = -q - r;
 			if (-size <= s && s <= size) {
-				yield {
+				coordinates.push({
 					q,
 					r,
 					s,
-				};
+				});
 			}
 		}
 	}
-}
+	return coordinates;
+};
 
 export const asConnections = (
 	direction: Direction
@@ -177,14 +179,12 @@ export const asConnections = (
 	};
 };
 
-export default function* (config: Config): Generator<Cell> {
+export default (config: Config): Cell[] => {
 	const { mode } = config;
 	switch (mode) {
 		case "prims":
-			yield* Prims(config);
-			return;
+			return Prims(config);
 		case "wilsons":
-			yield* Wilsons(config);
-			return;
+			return Wilsons(config);
 	}
-}
+};

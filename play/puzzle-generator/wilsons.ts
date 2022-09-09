@@ -36,7 +36,7 @@ function* skip<T>(n: number, iterator: IterableIterator<T>): Generator<T> {
 }
 
 // https://en.wikipedia.org/wiki/Loop-erased_random_walk
-export default function* ({ size, seed }: Config): Generator<Cell> {
+export default ({ size, seed }: Config): Cell[] => {
 	const random = Seedrandom(seed);
 	const RandomNeighbour = (size: number, coordinate: Coordinate): Neighbour => {
 		const neighbours = ValidNeighbours(size, coordinate);
@@ -94,7 +94,7 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		}
 	};
 
-	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
+	const coordinates: Coordinate[] = CoordinatesGenerator(size);
 	const solution: Record<CoordinateKey, DenormalConnection> = {};
 	const remaining = new Map<CoordinateKey, Coordinate>();
 	for (const coordinate of coordinates) {
@@ -122,15 +122,17 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		}
 	}
 
+	const cells = [];
 	for (const coordinate of coordinates) {
 		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
 		const randomOrientationIndex = Math.floor(random() * Orientations.length);
 		const orientation = Orientations[randomOrientationIndex]!;
 		const connection = normalizeConnection(denormalConnection);
-		yield {
+		cells.push({
 			coordinate,
 			orientation,
 			connection,
-		};
+		});
 	}
-}
+	return cells;
+};

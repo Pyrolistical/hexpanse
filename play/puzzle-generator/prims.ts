@@ -19,20 +19,19 @@ import {
 } from "./";
 
 type ConnectableNeighbour = { neighbour: Neighbour; connected: boolean };
-function* PartitionNeighbours(
+const PartitionNeighbours = (
 	size: number,
 	coordinate: Coordinate,
 	visited: Set<CoordinateKey>
-): Generator<ConnectableNeighbour> {
-	for (const neighbour of ValidNeighbours(size, coordinate)) {
+): ConnectableNeighbour[] =>
+	ValidNeighbours(size, coordinate).map((neighbour) => {
 		const { coordinate: neighbourCoordinate } = neighbour;
 		const connected = visited.has(asCoordinateKey(neighbourCoordinate));
-		yield {
+		return {
 			neighbour,
 			connected,
 		};
-	}
-}
+	});
 
 const addConnection = (
 	solution: Record<CoordinateKey, DenormalConnection>,
@@ -54,9 +53,9 @@ function* skip<T>(n: number, iterator: IterableIterator<T>): Generator<T> {
 }
 
 // https://en.wikipedia.org/wiki/Prim%27s_algorithm
-export default function* ({ size, seed }: Config): Generator<Cell> {
+export default ({ size, seed }: Config): Cell[] => {
 	const random = Seedrandom(seed);
-	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
+	const coordinates: Coordinate[] = CoordinatesGenerator(size);
 	const solution: Record<CoordinateKey, DenormalConnection> = {};
 	const visited = new Set<CoordinateKey>();
 	const working = new Map<CoordinateKey, Coordinate>();
@@ -78,7 +77,7 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		const current = working.get(randomWorkingKey)!;
 		working.delete(randomWorkingKey);
 		const workingKey = asCoordinateKey(current);
-		const neighbours = [...PartitionNeighbours(size, current, visited)];
+		const neighbours = PartitionNeighbours(size, current, visited);
 		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
 		const randomConnectedNeighbourIndex = Math.floor(
 			random() * connectedNeighbours.length
@@ -101,15 +100,17 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		}
 	}
 
+	const cells = [];
 	for (const coordinate of coordinates) {
 		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
 		const randomOrientationIndex = Math.floor(random() * Orientations.length);
 		const orientation = Orientations[randomOrientationIndex]!;
 		const connection = normalizeConnection(denormalConnection);
-		yield {
+		cells.push({
 			coordinate,
 			orientation,
 			connection,
-		};
+		});
 	}
-}
+	return cells;
+};

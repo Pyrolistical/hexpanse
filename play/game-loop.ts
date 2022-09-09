@@ -543,42 +543,56 @@ const rotate = (
 	return coordinate;
 };
 
-function* Neighbours({
+const Neighbours = ({
 	coordinate,
 	orientation: { value: orientation },
 	connection,
-}: Cell): Generator<Coordinate> {
+}: Cell): Coordinate[] => {
+	const coordinates = [];
 	const { q, r, s } = coordinate;
 	// r
 	if (connection & 0b100000) {
-		yield rotate({ q: q + 1, r, s: s - 1 }, orientation, coordinate);
+		coordinates.push(
+			rotate({ q: q + 1, r, s: s - 1 }, orientation, coordinate)
+		);
 	}
 
 	// -q
 	if (connection & 0b010000) {
-		yield rotate({ q, r: r + 1, s: s - 1 }, orientation, coordinate);
+		coordinates.push(
+			rotate({ q, r: r + 1, s: s - 1 }, orientation, coordinate)
+		);
 	}
 
 	// s
 	if (connection & 0b001000) {
-		yield rotate({ q: q - 1, r: r + 1, s }, orientation, coordinate);
+		coordinates.push(
+			rotate({ q: q - 1, r: r + 1, s }, orientation, coordinate)
+		);
 	}
 
 	// -r
 	if (connection & 0b000100) {
-		yield rotate({ q: q - 1, r, s: s + 1 }, orientation, coordinate);
+		coordinates.push(
+			rotate({ q: q - 1, r, s: s + 1 }, orientation, coordinate)
+		);
 	}
 
 	// q
 	if (connection & 0b000010) {
-		yield rotate({ q, r: r - 1, s: s + 1 }, orientation, coordinate);
+		coordinates.push(
+			rotate({ q, r: r - 1, s: s + 1 }, orientation, coordinate)
+		);
 	}
 
 	// -s
 	if (connection & 0b000001) {
-		yield rotate({ q: q + 1, r: r - 1, s }, orientation, coordinate);
+		coordinates.push(
+			rotate({ q: q + 1, r: r - 1, s }, orientation, coordinate)
+		);
 	}
-}
+	return coordinates;
+};
 
 const updateFacingNeighbours = (
 	coordinateKey: CoordinateKey,
