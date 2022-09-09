@@ -5,7 +5,7 @@ import {
 	Orientations,
 } from "../game-loop";
 
-import Random from "../random";
+import Seedrandom from "seedrandom";
 
 import {
 	Config,
@@ -25,11 +25,24 @@ type Segment = {
 	backwards: DenormalConnection;
 };
 
+function* skip<T>(n: number, iterator: IterableIterator<T>): Generator<T> {
+	let i = 0;
+	for (const value of iterator) {
+		if (i++ < n) {
+			continue;
+		}
+		yield value;
+	}
+}
+
 // https://en.wikipedia.org/wiki/Loop-erased_random_walk
 export default function* ({ size, seed }: Config): Generator<Cell> {
-	const { chooseOne, randomIterator, removeOne } = Random(seed);
-	const RandomNeighbour = (size: number, coordinate: Coordinate): Neighbour =>
-		randomIterator(ValidNeighbours(size, coordinate)).next().value;
+	const random = Seedrandom(seed);
+	const RandomNeighbour = (size: number, coordinate: Coordinate): Neighbour => {
+		const neighbours = ValidNeighbours(size, coordinate);
+		const randomIndex = Math.floor(random() * neighbours.length);
+		return neighbours[randomIndex]!;
+	};
 
 	const loopErasedRandomWalk = (
 		start: Coordinate,
@@ -88,9 +101,20 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		remaining.set(asCoordinateKey(coordinate), coordinate);
 	}
 
-	removeOne(remaining); // start
+	// start
+	const randomRemainingIndex = Math.floor(random() * remaining.size);
+	const randomRemainingKey = skip(randomRemainingIndex, remaining.keys()).next()
+		.value;
+	remaining.delete(randomRemainingKey);
+
 	while (remaining.size > 0) {
-		const current = removeOne(remaining);
+		const randomRemainingIndex = Math.floor(random() * remaining.size);
+		const randomRemainingKey = skip(
+			randomRemainingIndex,
+			remaining.keys()
+		).next().value;
+		const current = remaining.get(randomRemainingKey)!;
+		remaining.delete(randomRemainingKey);
 		const path = loopErasedRandomWalk(current, remaining);
 		for (const { key, forwards, backwards } of path) {
 			remaining.delete(key);
@@ -100,7 +124,8 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 
 	for (const coordinate of coordinates) {
 		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
-		const orientation = chooseOne(Orientations);
+		const randomOrientationIndex = Math.floor(random() * Orientations.length);
+		const orientation = Orientations[randomOrientationIndex]!;
 		const connection = normalizeConnection(denormalConnection);
 		yield {
 			coordinate,

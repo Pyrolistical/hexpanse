@@ -5,7 +5,7 @@ import {
 	Orientations,
 } from "../game-loop";
 
-import Random from "../random";
+import Seedrandom from "seedrandom";
 
 import {
 	Config,
@@ -43,15 +43,26 @@ const addConnection = (
 	solution[key] |= connection;
 };
 
+function* skip<T>(n: number, iterator: IterableIterator<T>): Generator<T> {
+	let i = 0;
+	for (const value of iterator) {
+		if (i++ < n) {
+			continue;
+		}
+		yield value;
+	}
+}
+
 // https://en.wikipedia.org/wiki/Prim%27s_algorithm
 export default function* ({ size, seed }: Config): Generator<Cell> {
-	const { chooseOne, removeOne } = Random(seed);
+	const random = Seedrandom(seed);
 	const coordinates: Coordinate[] = [...CoordinatesGenerator(size)];
 	const solution: Record<CoordinateKey, DenormalConnection> = {};
 	const visited = new Set<CoordinateKey>();
 	const working = new Map<CoordinateKey, Coordinate>();
 
-	const start = chooseOne(coordinates);
+	const randomStartIndex = Math.floor(random() * coordinates.length);
+	const start = coordinates[randomStartIndex]!;
 	visited.add(asCoordinateKey(start));
 	for (const { coordinate } of ValidNeighbours(size, start)) {
 		working.set(asCoordinateKey(coordinate), coordinate);
@@ -61,13 +72,20 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 		if (working.size === 0) {
 			throw new Error("working set unexpectedly empty");
 		}
-		const current = removeOne(working);
+		const randomWorkingIndex = Math.floor(random() * working.size);
+		const randomWorkingKey = skip(randomWorkingIndex, working.keys()).next()
+			.value;
+		const current = working.get(randomWorkingKey)!;
+		working.delete(randomWorkingKey);
 		const workingKey = asCoordinateKey(current);
 		const neighbours = [...PartitionNeighbours(size, current, visited)];
 		const connectedNeighbours = neighbours.filter(({ connected }) => connected);
+		const randomConnectedNeighbourIndex = Math.floor(
+			random() * connectedNeighbours.length
+		);
 		const {
 			neighbour: { coordinate: neighbourCoordinate, direction },
-		} = chooseOne(connectedNeighbours);
+		} = connectedNeighbours[randomConnectedNeighbourIndex]!;
 
 		const { forwards, backwards } = asConnections(direction);
 		const neighbourKey = asCoordinateKey(neighbourCoordinate);
@@ -85,7 +103,8 @@ export default function* ({ size, seed }: Config): Generator<Cell> {
 
 	for (const coordinate of coordinates) {
 		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
-		const orientation = chooseOne(Orientations);
+		const randomOrientationIndex = Math.floor(random() * Orientations.length);
+		const orientation = Orientations[randomOrientationIndex]!;
 		const connection = normalizeConnection(denormalConnection);
 		yield {
 			coordinate,

@@ -93,64 +93,62 @@ type Direction =
 	| 4 // s
 	| 5; // -r
 export type Neighbour = { coordinate: Coordinate; direction: Direction };
-function* Neighbours({ q, r, s }: Coordinate): Generator<Neighbour> {
-	// q
-	yield {
-		coordinate: { q, r: r - 1, s: s + 1 },
-		direction: 0,
-	};
+const Neighbours = ({ q, r, s }: Coordinate): Neighbour[] => {
+	return [
+		// q
+		{
+			coordinate: { q, r: r - 1, s: s + 1 },
+			direction: 0,
+		},
 
-	// -s
-	yield {
-		coordinate: { q: q + 1, r: r - 1, s },
-		direction: 1,
-	};
+		// -s
+		{
+			coordinate: { q: q + 1, r: r - 1, s },
+			direction: 1,
+		},
 
-	// r
-	yield {
-		coordinate: { q: q + 1, r, s: s - 1 },
-		direction: 2,
-	};
+		// r
+		{
+			coordinate: { q: q + 1, r, s: s - 1 },
+			direction: 2,
+		},
 
-	// -q
-	yield {
-		coordinate: { q, r: r + 1, s: s - 1 },
-		direction: 3,
-	};
+		// -q
+		{
+			coordinate: { q, r: r + 1, s: s - 1 },
+			direction: 3,
+		},
 
-	// s
-	yield {
-		coordinate: { q: q - 1, r: r + 1, s },
-		direction: 4,
-	};
+		// s
+		{
+			coordinate: { q: q - 1, r: r + 1, s },
+			direction: 4,
+		},
 
-	// -r
-	yield {
-		coordinate: { q: q - 1, r, s: s + 1 },
-		direction: 5,
-	};
-}
+		// -r
+		{
+			coordinate: { q: q - 1, r, s: s + 1 },
+			direction: 5,
+		},
+	];
+};
 
-export function* ValidNeighbours(
+export const ValidNeighbours = (
 	size: number,
 	coordinate: Coordinate
-): Generator<Neighbour> {
-	for (const neighbour of Neighbours(coordinate)) {
-		const {
-			coordinate: { q, r, s },
-		} = neighbour;
+): Neighbour[] =>
+	Neighbours(coordinate).filter(({ coordinate: { q, r, s } }) => {
 		if (q < -size || q > size) {
-			continue;
+			return false;
 		}
 		if (r < -size || r > size) {
-			continue;
+			return false;
 		}
 		if (s < -size || s > size) {
-			continue;
+			return false;
 		}
-		yield neighbour;
-	}
-}
+		return true;
+	});
 
 export function* CoordinatesGenerator(size: number): Generator<Coordinate> {
 	for (let q = -size; q <= size; q++) {

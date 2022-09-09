@@ -605,7 +605,7 @@ const gameLoop: GameLoop =
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 1;
+		const size = 5;
 		if (!memory["state"]) {
 			const cells: Cells = {};
 			const config = {
