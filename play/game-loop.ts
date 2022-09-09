@@ -648,7 +648,10 @@ const gameLoop: GameLoop =
 			case "playing": {
 				ctx.save();
 				ctx.translate(width / 2, height / 2);
-				const scale = height / (2 * (2 * size * 0.75 + 1));
+				const horizontalScale =
+					width / (hexagonUnitHeight * 2 * (2 * size + 1));
+				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
+				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
 				const cells: Cells = memory["cells"];
 				ctx.fillStyle = cellBackground;
@@ -695,7 +698,10 @@ const gameLoop: GameLoop =
 			case "game over": {
 				ctx.save();
 				ctx.translate(width / 2, height / 2);
-				const scale = height / (2 * (2 * size * 0.75 + 1));
+				const horizontalScale =
+					width / (hexagonUnitHeight * 2 * (2 * size + 1));
+				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
+				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
 				const cells: Cells = memory["cells"];
 				ctx.fillStyle = cellBackground;
