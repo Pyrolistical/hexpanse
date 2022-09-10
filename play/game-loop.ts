@@ -625,7 +625,7 @@ const gameLoop: GameLoop =
 			const config = {
 				size,
 				seed: "9f96afb4-47ea-4ef8-8a18-7b8fa218573f",
-				mode: "prims",
+				mode: "wilsons",
 			} as const;
 			for (const { coordinate, orientation, connection } of PuzzleGenerator(
 				config

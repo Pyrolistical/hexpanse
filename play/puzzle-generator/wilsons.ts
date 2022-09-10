@@ -25,18 +25,10 @@ type Segment = {
 	backwards: DenormalConnection;
 };
 
-function* skip<T>(n: number, iterator: IterableIterator<T>): Generator<T> {
-	let i = 0;
-	for (const value of iterator) {
-		if (i++ < n) {
-			continue;
-		}
-		yield value;
-	}
-}
-
 // https://en.wikipedia.org/wiki/Loop-erased_random_walk
 export default ({ size, seed }: Config): Cell[] => {
+	const asIndex = (x: number) => x + size;
+
 	const random = Seedrandom(seed);
 	const RandomNeighbour = (size: number, coordinate: Coordinate): Neighbour => {
 		const neighbours = ValidNeighbours(size, coordinate);
@@ -46,7 +38,7 @@ export default ({ size, seed }: Config): Cell[] => {
 
 	const loopErasedRandomWalk = (
 		start: Coordinate,
-		remaining: Map<CoordinateKey, Coordinate>
+		remaining: Coordinate[][]
 	): Segment[] => {
 		const working = new Map<CoordinateKey, Coordinate>();
 		const startKey = asCoordinateKey(start);
@@ -85,7 +77,10 @@ export default ({ size, seed }: Config): Cell[] => {
 					forwards: 0,
 					backwards,
 				});
-				const end = !remaining.has(neighbourKey);
+				const end =
+					!remaining[asIndex(neighbourCoordinate.q)]?.[
+						asIndex(neighbourCoordinate.r)
+					];
 				if (end) {
 					return path;
 				}
@@ -96,28 +91,70 @@ export default ({ size, seed }: Config): Cell[] => {
 
 	const coordinates: Coordinate[] = CoordinatesGenerator(size);
 	const solution: Record<CoordinateKey, DenormalConnection> = {};
-	const remaining = new Map<CoordinateKey, Coordinate>();
+	const remaining: Coordinate[][] = [];
+	let remainingCount = 0;
 	for (const coordinate of coordinates) {
-		remaining.set(asCoordinateKey(coordinate), coordinate);
+		remaining[asIndex(coordinate.q)] ??= [];
+		remaining[asIndex(coordinate.q)]![asIndex(coordinate.r)] = coordinate;
+		remainingCount += 1;
 	}
 
 	// start
-	const randomRemainingIndex = Math.floor(random() * remaining.size);
-	const randomRemainingKey = skip(randomRemainingIndex, remaining.keys()).next()
-		.value;
-	remaining.delete(randomRemainingKey);
+	let randomRemainingIndex = Math.floor(random() * remainingCount);
+	q: for (let q = 0; q < 2 * size; q++) {
+		for (let r = 0; r < 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			if (!remaining[q]?.[r]) {
+				continue;
+			}
+			if (randomRemainingIndex === 0) {
+				delete remaining[q]![r];
+				if (remaining[q]!.length === 0) {
+					delete remaining[q];
+				}
+				remainingCount -= 1;
+				break q;
+			}
+			randomRemainingIndex -= 1;
+		}
+	}
 
-	while (remaining.size > 0) {
-		const randomRemainingIndex = Math.floor(random() * remaining.size);
-		const randomRemainingKey = skip(
-			randomRemainingIndex,
-			remaining.keys()
-		).next().value;
-		const current = remaining.get(randomRemainingKey)!;
-		remaining.delete(randomRemainingKey);
-		const path = loopErasedRandomWalk(current, remaining);
-		for (const { key, forwards, backwards } of path) {
-			remaining.delete(key);
+	while (remainingCount > 0) {
+		let randomRemainingIndex = Math.floor(random() * remainingCount);
+		let current: Coordinate;
+		q: for (let q = 0; q <= 2 * size; q++) {
+			for (let r = 0; r <= 2 * size; r++) {
+				if (q + r < size || q + r > 3 * size) {
+					continue;
+				}
+				if (!remaining[q]?.[r]) {
+					continue;
+				}
+				if (randomRemainingIndex === 0) {
+					current = remaining[q]![r]!;
+					delete remaining[q]![r];
+					if (remaining[q]!.length === 0) {
+						delete remaining[q];
+					}
+					remainingCount -= 1;
+					break q;
+				}
+				randomRemainingIndex -= 1;
+			}
+		}
+		const path = loopErasedRandomWalk(current!, remaining);
+		for (const { key, coordinate, forwards, backwards } of path) {
+			const q = asIndex(coordinate.q);
+			const r = asIndex(coordinate.r);
+			if (remaining[q]![r]) {
+				delete remaining[q]![r];
+				if (remaining[q]!.length === 0) {
+					delete remaining[q];
+				}
+				remainingCount -= 1;
+			}
 			solution[key] |= forwards | backwards;
 		}
 	}

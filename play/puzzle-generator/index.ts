@@ -22,7 +22,7 @@ export type DenormalConnection = number;
 export const normalizeConnection = (
 	connection: DenormalConnection
 ): Connection => {
-	if (connection === 0) {
+	if (!connection) {
 		throw new Error("connection cannot be empty");
 	}
 	if (connection === 0b111111) {
