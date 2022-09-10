@@ -40,7 +40,7 @@ export default ({ size, seed }: Config): Cell[] => {
 		start: Coordinate,
 		remaining: Coordinate[][]
 	): Segment[] => {
-		const working = new Map<CoordinateKey, Coordinate>();
+		const working: Coordinate[][] = [];
 		const startKey = asCoordinateKey(start);
 		let path: Segment[] = [
 			{
@@ -50,7 +50,8 @@ export default ({ size, seed }: Config): Cell[] => {
 				backwards: 0,
 			},
 		];
-		working.set(startKey, start);
+		working[asIndex(start.q)] ??= [];
+		working[asIndex(start.q)]![asIndex(start.r)] = start;
 		while (true) {
 			const current = path.at(-1)!.coordinate;
 			const { coordinate: neighbourCoordinate, direction } = RandomNeighbour(
@@ -58,12 +59,20 @@ export default ({ size, seed }: Config): Cell[] => {
 				current
 			);
 			const neighbourKey = asCoordinateKey(neighbourCoordinate);
-			const looped = working.has(neighbourKey);
+			const looped =
+				working[asIndex(neighbourCoordinate.q)]?.[
+					asIndex(neighbourCoordinate.r)
+				];
 			if (looped) {
 				const loopIndex = path.findIndex(({ key }) => key === neighbourKey) + 1;
 				for (let i = loopIndex; i < path.length; i++) {
-					const { key } = path[i]!;
-					working.delete(key);
+					const { coordinate } = path[i]!;
+					const q = asIndex(coordinate.q);
+					const r = asIndex(coordinate.r);
+					delete working[q]![r];
+					if (working[q]!.length === 0) {
+						delete working[q];
+					}
 				}
 				path = path.slice(0, loopIndex);
 
@@ -84,7 +93,10 @@ export default ({ size, seed }: Config): Cell[] => {
 				if (end) {
 					return path;
 				}
-				working.set(neighbourKey, neighbourCoordinate);
+				working[asIndex(neighbourCoordinate.q)] ??= [];
+				working[asIndex(neighbourCoordinate.q)]![
+					asIndex(neighbourCoordinate.r)
+				] = neighbourCoordinate;
 			}
 		}
 	};
