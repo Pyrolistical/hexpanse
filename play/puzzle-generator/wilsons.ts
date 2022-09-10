@@ -1,9 +1,4 @@
-import {
-	Coordinate,
-	CoordinateKey,
-	asCoordinateKey,
-	Orientations,
-} from "../game-loop";
+import { Coordinate, Orientations } from "../game-loop";
 
 import Seedrandom from "seedrandom";
 
@@ -19,7 +14,6 @@ import {
 } from "./";
 
 type Segment = {
-	key: CoordinateKey;
 	coordinate: Coordinate;
 	forwards: DenormalConnection;
 	backwards: DenormalConnection;
@@ -41,10 +35,8 @@ export default ({ size, seed }: Config): Cell[] => {
 		remaining: Coordinate[][]
 	): Segment[] => {
 		const working: Coordinate[][] = [];
-		const startKey = asCoordinateKey(start);
 		let path: Segment[] = [
 			{
-				key: startKey,
 				coordinate: start,
 				forwards: 0,
 				backwards: 0,
@@ -58,13 +50,17 @@ export default ({ size, seed }: Config): Cell[] => {
 				size,
 				current
 			);
-			const neighbourKey = asCoordinateKey(neighbourCoordinate);
 			const looped =
 				working[asIndex(neighbourCoordinate.q)]?.[
 					asIndex(neighbourCoordinate.r)
 				];
 			if (looped) {
-				const loopIndex = path.findIndex(({ key }) => key === neighbourKey) + 1;
+				const loopIndex =
+					path.findIndex(
+						({ coordinate }) =>
+							coordinate.q === neighbourCoordinate.q &&
+							coordinate.r === neighbourCoordinate.r
+					) + 1;
 				for (let i = loopIndex; i < path.length; i++) {
 					const { coordinate } = path[i]!;
 					const q = asIndex(coordinate.q);
@@ -81,7 +77,6 @@ export default ({ size, seed }: Config): Cell[] => {
 				const { forwards, backwards } = asConnections(direction);
 				path.at(-1)!.forwards = forwards;
 				path.push({
-					key: neighbourKey,
 					coordinate: neighbourCoordinate,
 					forwards: 0,
 					backwards,
@@ -102,7 +97,7 @@ export default ({ size, seed }: Config): Cell[] => {
 	};
 
 	const coordinates: Coordinate[] = CoordinatesGenerator(size);
-	const solution: Record<CoordinateKey, DenormalConnection> = {};
+	const solution: DenormalConnection[][] = [];
 	const remaining: Coordinate[][] = [];
 	let remainingCount = 0;
 	for (const coordinate of coordinates) {
@@ -157,7 +152,7 @@ export default ({ size, seed }: Config): Cell[] => {
 			}
 		}
 		const path = loopErasedRandomWalk(current!, remaining);
-		for (const { key, coordinate, forwards, backwards } of path) {
+		for (const { coordinate, forwards, backwards } of path) {
 			const q = asIndex(coordinate.q);
 			const r = asIndex(coordinate.r);
 			if (remaining[q]![r]) {
@@ -167,13 +162,15 @@ export default ({ size, seed }: Config): Cell[] => {
 				}
 				remainingCount -= 1;
 			}
-			solution[key] |= forwards | backwards;
+			solution[q] ??= [];
+			solution[q]![r] |= forwards | backwards;
 		}
 	}
 
 	const cells = [];
 	for (const coordinate of coordinates) {
-		const denormalConnection = solution[asCoordinateKey(coordinate)]!;
+		const denormalConnection =
+			solution[asIndex(coordinate.q)]![asIndex(coordinate.r)]!;
 		const randomOrientationIndex = Math.floor(random() * Orientations.length);
 		const orientation = Orientations[randomOrientationIndex]!;
 		const connection = normalizeConnection(denormalConnection);
