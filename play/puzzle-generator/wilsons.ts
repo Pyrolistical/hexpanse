@@ -19,6 +19,8 @@ type Segment = {
 	backwards: DenormalConnection;
 };
 
+type QR<T> = T[][];
+
 // https://en.wikipedia.org/wiki/Loop-erased_random_walk
 export default ({ size, seed }: Config): Cell[] => {
 	const asIndex = (x: number) => x + size;
@@ -32,9 +34,9 @@ export default ({ size, seed }: Config): Cell[] => {
 
 	const loopErasedRandomWalk = (
 		start: Coordinate,
-		remaining: Coordinate[][]
+		remaining: QR<Coordinate>
 	): Segment[] => {
-		const working: Coordinate[][] = [];
+		const working: QR<Coordinate> = [];
 		let path: Segment[] = [
 			{
 				coordinate: start,
@@ -97,8 +99,8 @@ export default ({ size, seed }: Config): Cell[] => {
 	};
 
 	const coordinates: Coordinate[] = CoordinatesGenerator(size);
-	const solution: DenormalConnection[][] = [];
-	const remaining: Coordinate[][] = [];
+	const solution: QR<DenormalConnection> = [];
+	const remaining: QR<Coordinate> = [];
 	let remainingCount = 0;
 	for (const coordinate of coordinates) {
 		remaining[asIndex(coordinate.q)] ??= [];
@@ -108,8 +110,8 @@ export default ({ size, seed }: Config): Cell[] => {
 
 	// start
 	let randomRemainingIndex = Math.floor(random() * remainingCount);
-	q: for (let q = 0; q < 2 * size; q++) {
-		for (let r = 0; r < 2 * size; r++) {
+	q: for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
 			if (q + r < size || q + r > 3 * size) {
 				continue;
 			}

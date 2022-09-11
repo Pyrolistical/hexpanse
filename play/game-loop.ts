@@ -55,8 +55,6 @@ export type Connection = typeof Connections[number];
 const Colors = ["none", "red", "green", "blue"] as const;
 export type Color = typeof Colors[number];
 
-type Cells = Record<CoordinateKey, Cell>;
-
 const lerp = (t: number, a: number, b: number): number => {
 	return (1 - t) * a + t * b;
 };
@@ -362,19 +360,19 @@ const drawEdges = (ctx: Context2D, connection: Connection) => {
 
 const base03 = "#002b36";
 const base02 = "#073642";
-const base01 = "#586e75";
-const base00 = "#657b83";
+// const base01 = "#586e75";
+// const base00 = "#657b83";
 const base0 = "#839496";
-const base1 = "#93a1a1";
-const base2 = "#eee8d5";
-const base3 = "#fdf6e3";
-const yellow = "#b58900";
-const orange = "#cb4b16";
+// const base1 = "#93a1a1";
+// const base2 = "#eee8d5";
+// const base3 = "#fdf6e3";
+// const yellow = "#b58900";
+// const orange = "#cb4b16";
 const red = "#dc322f";
-const magenta = "#d33682";
-const violet = "#6c71c4";
+// const magenta = "#d33682";
+// const violet = "#6c71c4";
 const blue = "#268bd2";
-const cyan = "#2aa198";
+// const cyan = "#2aa198";
 const green = "#859900";
 const background = base03;
 const cellBackground = base02;
@@ -390,17 +388,28 @@ const hexagon = new Path2D(`
   z
 `);
 
-const mostCommonColor = (cells: Cells, span: Set<CoordinateKey>): Color => {
+const mostCommonColor = (
+	size: number,
+	cells: QR<Cell>,
+	span: QR<boolean>
+): Color => {
 	const colorCount: Record<Color, number> = {
 		none: 0,
 		red: 0,
 		green: 0,
 		blue: 0,
 	};
-	for (const coordinateKey of span) {
-		const { color } = cells[coordinateKey]!;
-		colorCount[color] ??= 0;
-		colorCount[color] += 1;
+	for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			if (span[q]?.[r]) {
+				const { color } = cells[q]![r]!;
+				colorCount[color] ??= 0;
+				colorCount[color] += 1;
+			}
+		}
 	}
 	const { color } = Object.entries(colorCount).reduce<{
 		color: Color;
@@ -423,62 +432,100 @@ const mostCommonColor = (cells: Cells, span: Set<CoordinateKey>): Color => {
 
 	return color;
 };
-function assertCoordinateKey(value: string): asserts value is CoordinateKey {}
+
+type QR<T> = T[][];
+const Q = (size: number, { q }: Coordinate) => size + q;
+const R = (size: number, { r }: Coordinate) => size + r;
+
+const QRSize = <T>(size: number, qr: QR<T>): number => {
+	let count = 0;
+	for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			if (qr[q]?.[r]) {
+				count += 1;
+			}
+		}
+	}
+	return count;
+};
 
 const entries = <K extends string, V>(values: Record<K, V>): [K, V][] =>
 	Object.entries(values) as [K, V][];
-type FacingNeighboursByCoordinate = Record<CoordinateKey, Set<CoordinateKey>>;
-type Spans = Record<number, Set<CoordinateKey>>;
+type FacingNeighboursByCoordinate = QR<QR<boolean>>;
+type Spans = Record<number, QR<boolean>>;
 const calculateSpans = (
-	cells: Cells,
+	size: number,
 	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
 ): Spans => {
 	let nextSpan = 0;
-	const spanByCoordinate: Record<CoordinateKey, number> = {};
-	const floodFill = (coordinateKey: CoordinateKey, span: number) => {
-		if (spanByCoordinate[coordinateKey]) {
+	const spanByCoordinate: QR<number> = [];
+	const floodFill = (currentQ: number, currentR: number, span: number) => {
+		if (spanByCoordinate[currentQ]?.[currentR]) {
 			return;
 		}
-		spanByCoordinate[coordinateKey] = span;
-		const facingNeighbours = facingNeighboursByCoordinate[coordinateKey];
+		spanByCoordinate[currentQ] ??= [];
+		spanByCoordinate[currentQ]![currentR] = span;
+		const facingNeighbours = facingNeighboursByCoordinate[currentQ]?.[currentR];
 		if (facingNeighbours) {
-			for (const neighbourKey of facingNeighbours) {
-				assertCoordinateKey(neighbourKey);
-				if (facingNeighboursByCoordinate[neighbourKey]?.has(coordinateKey)) {
-					floodFill(neighbourKey, span);
+			for (let q = 0; q <= 2 * size; q++) {
+				for (let r = 0; r <= 2 * size; r++) {
+					if (q + r < size || q + r > 3 * size) {
+						continue;
+					}
+					if (
+						facingNeighbours[q]?.[r] &&
+						facingNeighboursByCoordinate[q]?.[r]?.[currentQ]?.[currentR]
+					) {
+						floodFill(q, r, span);
+					}
 				}
 			}
 		}
 	};
-	for (const coordinateKey of Object.keys(cells)) {
-		assertCoordinateKey(coordinateKey);
-		floodFill(coordinateKey, ++nextSpan);
+	for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			floodFill(q, r, ++nextSpan);
+		}
 	}
 	const spans: Spans = {};
-	for (const [coordinateKey, span] of Object.entries(spanByCoordinate)) {
-		assertCoordinateKey(coordinateKey);
-		spans[span] ??= new Set<CoordinateKey>();
-		spans[span]!.add(coordinateKey);
+	for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			const span = spanByCoordinate[q]![r]!;
+			spans[span] ??= [];
+			spans[span]![q] ??= [];
+			spans[span]![q]![r] = true;
+		}
 	}
 	return spans;
 };
 
-const updateColors = (cells: Cells, spans: Spans) => {
+const updateColors = (size: number, cells: QR<Cell>, spans: Spans) => {
 	const avaiableColors = new Set<Color>(Colors);
 	avaiableColors.delete("none");
 
-	const colors: Record<Color, Set<CoordinateKey>> = {
-		none: new Set<CoordinateKey>(),
-		red: new Set<CoordinateKey>(),
-		green: new Set<CoordinateKey>(),
-		blue: new Set<CoordinateKey>(),
+	const colors: Record<Color, QR<boolean>> = {
+		none: [],
+		red: [],
+		green: [],
+		blue: [],
 	};
-	const sortedSpans = Object.values(spans).sort((a, b) => b.size - a.size);
+	const sortedSpans = Object.values(spans).sort(
+		(a, b) => QRSize(size, b) - QRSize(size, a)
+	);
 	const longestSpans = [];
 	const uncoloredSpans = [];
 
 	for (const span of sortedSpans) {
-		if (span.size > 1 && longestSpans.length < avaiableColors.size) {
+		if (QRSize(size, span) > 1 && longestSpans.length < avaiableColors.size) {
 			longestSpans.push(span);
 		} else {
 			uncoloredSpans.push(span);
@@ -486,7 +533,7 @@ const updateColors = (cells: Cells, spans: Spans) => {
 	}
 
 	for (const span of longestSpans) {
-		const currentColor = mostCommonColor(cells, span);
+		const currentColor = mostCommonColor(size, cells, span);
 		if (avaiableColors.has(currentColor)) {
 			colors[currentColor] = span;
 			avaiableColors.delete(currentColor);
@@ -501,7 +548,7 @@ const updateColors = (cells: Cells, spans: Spans) => {
 			break;
 		}
 		const span = uncoloredSpans[i]!;
-		if (span.size <= 1) {
+		if (QRSize(size, span) <= 1) {
 			break;
 		}
 		colors[color] = span;
@@ -509,14 +556,30 @@ const updateColors = (cells: Cells, spans: Spans) => {
 	}
 
 	for (const span of uncoloredSpans.slice(i)) {
-		for (const coodrinateKey of span) {
-			colors.none.add(coodrinateKey);
+		for (let q = 0; q <= 2 * size; q++) {
+			for (let r = 0; r <= 2 * size; r++) {
+				if (q + r < size || q + r > 3 * size) {
+					continue;
+				}
+				if (span[q]?.[r]) {
+					colors.none[q] ??= [];
+					colors.none[q]![r] = true;
+				}
+			}
 		}
 	}
 
-	for (const [color, coordinateKeys] of entries(colors)) {
-		for (const coordinateKey of coordinateKeys) {
-			cells[coordinateKey]!.color = color;
+	for (const [color, group] of entries(colors)) {
+		for (let q = 0; q <= 2 * size; q++) {
+			for (let r = 0; r <= 2 * size; r++) {
+				if (q + r < size || q + r > 3 * size) {
+					continue;
+				}
+				if (group[q]?.[r]) {
+					cells[q] ??= [];
+					cells[q]![r]!.color = color;
+				}
+			}
 		}
 	}
 };
@@ -595,19 +658,24 @@ const Neighbours = ({
 };
 
 const updateFacingNeighbours = (
-	coordinateKey: CoordinateKey,
-	cells: Cells,
+	size: number,
+	q: number,
+	r: number,
+	cells: QR<Cell>,
 	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
 ) => {
-	const cell = cells[coordinateKey]!;
+	const cell = cells[q]![r]!;
 	for (const neighbour of Neighbours(cell)) {
-		const neighbourKey = asCoordinateKey(neighbour);
-		const neighbourCell = cells[neighbourKey];
+		const neighbourCell = cells[Q(size, neighbour)]?.[R(size, neighbour)];
 		if (!neighbourCell) {
 			continue;
 		}
-		facingNeighboursByCoordinate[coordinateKey] ??= new Set<CoordinateKey>();
-		facingNeighboursByCoordinate[coordinateKey]!.add(neighbourKey);
+		facingNeighboursByCoordinate[q] ??= [];
+		facingNeighboursByCoordinate[q]![r] ??= [];
+		facingNeighboursByCoordinate[q]![r]![Q(size, neighbour)] ??= [];
+		facingNeighboursByCoordinate[q]![r]![Q(size, neighbour)]![
+			R(size, neighbour)
+		] = true;
 	}
 };
 
@@ -615,13 +683,13 @@ import type { GameLoop, Context2D } from "./index";
 
 const gameLoop: GameLoop =
 	(memory) =>
-	(ctx, time, [width, height], events) => {
+	(ctx, time, [width, height]) => {
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 5;
+		const size = 3;
 		if (!memory["state"]) {
-			const cells: Cells = {};
+			const cells: QR<Cell> = [];
 			const config = {
 				size,
 				seed: "9f96afb4-47ea-4ef8-8a18-7b8fa218573f",
@@ -630,7 +698,8 @@ const gameLoop: GameLoop =
 			for (const { coordinate, orientation, connection } of PuzzleGenerator(
 				config
 			)) {
-				cells[asCoordinateKey(coordinate)] = {
+				cells[Q(size, coordinate)] ??= [];
+				cells[Q(size, coordinate)]![R(size, coordinate)] = {
 					coordinate,
 					orientation: {
 						value: orientation,
@@ -644,18 +713,24 @@ const gameLoop: GameLoop =
 			}
 			memory["cells"] = cells;
 			memory["state"] = "playing";
-			const facingNeighboursByCoordinate = {};
-			for (const coordinateKey of Object.keys(cells)) {
-				assertCoordinateKey(coordinateKey);
-				updateFacingNeighbours(
-					coordinateKey,
-					cells,
-					facingNeighboursByCoordinate
-				);
+			const facingNeighboursByCoordinate: FacingNeighboursByCoordinate = [];
+			for (let q = 0; q <= 2 * size; q++) {
+				for (let r = 0; r <= 2 * size; r++) {
+					if (q + r < size || q + r > 3 * size) {
+						continue;
+					}
+					updateFacingNeighbours(
+						size,
+						q,
+						r,
+						cells,
+						facingNeighboursByCoordinate
+					);
+				}
 			}
 			memory["facingNeighboursByCoordinate"] = facingNeighboursByCoordinate;
-			const spans = calculateSpans(cells, facingNeighboursByCoordinate);
-			updateColors(cells, spans);
+			const spans = calculateSpans(size, facingNeighboursByCoordinate);
+			updateColors(size, cells, spans);
 		}
 
 		switch (memory["state"]) {
@@ -667,43 +742,53 @@ const gameLoop: GameLoop =
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				const cells: Cells = memory["cells"];
+				const cells: QR<Cell> = memory["cells"];
 				ctx.fillStyle = cellBackground;
-				for (const [coordinateKey, cell] of Object.entries(cells)) {
-					assertCoordinateKey(coordinateKey);
-					const {
-						coordinate: { q, r },
-					} = cell;
-					// Q basis [Math.sqrt(3), 0]
-					// R basis [Math.sqrt(3) / 2, 3 / 2]
-					// [x, y] = Q basis * q + R basis * r
-					const x = 2 * hexagonUnitHeight * q + hexagonUnitHeight * r;
-					const y = (3 / 2) * r;
-					ctx.save();
-					ctx.translate(x, y);
-					if (drawCell(ctx, time, cell)) {
-						cell.orientation.value += 60;
-						cell.orientation.value %= 360;
-						cell.orientation.animate = "clockwise";
-						cell.orientation.startTime = time;
-
-						const facingNeighboursByCoordinate =
-							memory["facingNeighboursByCoordinate"];
-						delete facingNeighboursByCoordinate[coordinateKey];
-						updateFacingNeighbours(
-							coordinateKey,
-							cells,
-							facingNeighboursByCoordinate
-						);
-						const spans = calculateSpans(cells, facingNeighboursByCoordinate);
-						if (Object.values(spans).length === 1) {
-							memory["state"] = "game over";
-						} else {
-							updateColors(cells, spans);
+				for (let q = 0; q <= 2 * size; q++) {
+					for (let r = 0; r <= 2 * size; r++) {
+						if (q + r < size || q + r > 3 * size) {
+							continue;
 						}
-						ctx.draw();
+						const cell = cells[q]![r]!;
+						const {
+							coordinate: { q: cellQ, r: cellR },
+						} = cell;
+						// Q basis [Math.sqrt(3), 0]
+						// R basis [Math.sqrt(3) / 2, 3 / 2]
+						// [x, y] = Q basis * q + R basis * r
+						const x = 2 * hexagonUnitHeight * cellQ + hexagonUnitHeight * cellR;
+						const y = (3 / 2) * cellR;
+						ctx.save();
+						ctx.translate(x, y);
+						if (drawCell(ctx, time, cell)) {
+							cell.orientation.value += 60;
+							cell.orientation.value %= 360;
+							cell.orientation.animate = "clockwise";
+							cell.orientation.startTime = time;
+
+							const facingNeighboursByCoordinate: FacingNeighboursByCoordinate =
+								memory["facingNeighboursByCoordinate"];
+							delete facingNeighboursByCoordinate[q]?.[r];
+							if (facingNeighboursByCoordinate[q]?.length === 0) {
+								delete facingNeighboursByCoordinate[q];
+							}
+							updateFacingNeighbours(
+								size,
+								q,
+								r,
+								cells,
+								facingNeighboursByCoordinate
+							);
+							const spans = calculateSpans(size, facingNeighboursByCoordinate);
+							if (Object.values(spans).length === 1) {
+								memory["state"] = "game over";
+							} else {
+								updateColors(size, cells, spans);
+							}
+							ctx.draw();
+						}
+						ctx.restore();
 					}
-					ctx.restore();
 				}
 				ctx.restore();
 				break;
@@ -717,24 +802,29 @@ const gameLoop: GameLoop =
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				const cells: Cells = memory["cells"];
+				const cells: QR<Cell> = memory["cells"];
 				ctx.fillStyle = cellBackground;
 				const t = (Math.cos(Math.PI * (time / 2000)) + 1) / 2;
 				const l = Math.round(lerp(t, 50, 100));
-				for (const [coordinateKey, cell] of Object.entries(cells)) {
-					assertCoordinateKey(coordinateKey);
-					const {
-						coordinate: { q, r },
-					} = cell;
-					// Q basis [Math.sqrt(3), 0]
-					// R basis [Math.sqrt(3) / 2, 3 / 2]
-					// [x, y] = Q basis * q + R basis * r
-					const x = 2 * hexagonUnitHeight * q + hexagonUnitHeight * r;
-					const y = (3 / 2) * r;
-					ctx.save();
-					ctx.translate(x, y);
-					drawGameOverCell(ctx, cell, l);
-					ctx.restore();
+				for (let q = 0; q <= 2 * size; q++) {
+					for (let r = 0; r <= 2 * size; r++) {
+						if (q + r < size || q + r > 3 * size) {
+							continue;
+						}
+						const cell = cells[q]![r]!;
+						const {
+							coordinate: { q: cellQ, r: cellR },
+						} = cell;
+						// Q basis [Math.sqrt(3), 0]
+						// R basis [Math.sqrt(3) / 2, 3 / 2]
+						// [x, y] = Q basis * q + R basis * r
+						const x = 2 * hexagonUnitHeight * cellQ + hexagonUnitHeight * cellR;
+						const y = (3 / 2) * cellR;
+						ctx.save();
+						ctx.translate(x, y);
+						drawGameOverCell(ctx, cell, l);
+						ctx.restore();
+					}
 				}
 				ctx.restore();
 				ctx.draw();
