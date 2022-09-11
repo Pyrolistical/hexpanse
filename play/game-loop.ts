@@ -473,41 +473,62 @@ const entries = <K extends string, V>(values: Record<K, V>): [K, V][] =>
 	Object.entries(values) as [K, V][];
 type FacingNeighboursByCoordinate = QR<QR<boolean>>;
 type Spans = Record<number, QR<boolean>>;
+const floodFill = (
+	size: number,
+	currentQ: number,
+	currentR: number,
+	span: number,
+	spanByCoordinate: QR<number>,
+	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
+) => {
+	if (spanByCoordinate[currentQ]?.[currentR]) {
+		return;
+	}
+	spanByCoordinate[currentQ] ??= [];
+	spanByCoordinate[currentQ]![currentR] = span;
+	const facingNeighbours = facingNeighboursByCoordinate[currentQ]?.[currentR];
+	if (facingNeighbours) {
+		for (let q = 0; q <= 2 * size; q++) {
+			for (let r = 0; r <= 2 * size; r++) {
+				if (q + r < size || q + r > 3 * size) {
+					continue;
+				}
+				if (
+					facingNeighbours[q]?.[r] &&
+					facingNeighboursByCoordinate[q]?.[r]?.[currentQ]?.[currentR]
+				) {
+					floodFill(
+						size,
+						q,
+						r,
+						span,
+						spanByCoordinate,
+						facingNeighboursByCoordinate
+					);
+				}
+			}
+		}
+	}
+};
 const calculateSpans = (
 	size: number,
 	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
 ): Spans => {
 	let nextSpan = 0;
 	const spanByCoordinate: QR<number> = [];
-	const floodFill = (currentQ: number, currentR: number, span: number) => {
-		if (spanByCoordinate[currentQ]?.[currentR]) {
-			return;
-		}
-		spanByCoordinate[currentQ] ??= [];
-		spanByCoordinate[currentQ]![currentR] = span;
-		const facingNeighbours = facingNeighboursByCoordinate[currentQ]?.[currentR];
-		if (facingNeighbours) {
-			for (let q = 0; q <= 2 * size; q++) {
-				for (let r = 0; r <= 2 * size; r++) {
-					if (q + r < size || q + r > 3 * size) {
-						continue;
-					}
-					if (
-						facingNeighbours[q]?.[r] &&
-						facingNeighboursByCoordinate[q]?.[r]?.[currentQ]?.[currentR]
-					) {
-						floodFill(q, r, span);
-					}
-				}
-			}
-		}
-	};
 	for (let q = 0; q <= 2 * size; q++) {
 		for (let r = 0; r <= 2 * size; r++) {
 			if (q + r < size || q + r > 3 * size) {
 				continue;
 			}
-			floodFill(q, r, ++nextSpan);
+			floodFill(
+				size,
+				q,
+				r,
+				++nextSpan,
+				spanByCoordinate,
+				facingNeighboursByCoordinate
+			);
 		}
 	}
 	const spans: Spans = {};

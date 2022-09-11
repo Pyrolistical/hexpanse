@@ -20,91 +20,96 @@ type Segment = {
 };
 
 type QR<T> = T[][];
+const Q = (size: number, { q }: Coordinate) => size + q;
+const R = (size: number, { r }: Coordinate) => size + r;
+
+const RandomNeighbour = (
+	random: Seedrandom.PRNG,
+	size: number,
+	coordinate: Coordinate
+): Neighbour => {
+	const neighbours = ValidNeighbours(size, coordinate);
+	const randomIndex = Math.floor(random() * neighbours.length);
+	return neighbours[randomIndex]!;
+};
+
+const loopErasedRandomWalk = (
+	size: number,
+	random: Seedrandom.PRNG,
+	start: Coordinate,
+	remaining: QR<Coordinate>
+): Segment[] => {
+	const working: QR<boolean> = [];
+	let path: Segment[] = [
+		{
+			coordinate: start,
+			forwards: 0,
+			backwards: 0,
+		},
+	];
+	working[Q(size, start)] ??= [];
+	working[Q(size, start)]![R(size, start)] = true;
+	while (true) {
+		const current = path.at(-1)!.coordinate;
+		const { coordinate: neighbourCoordinate, direction } = RandomNeighbour(
+			random,
+			size,
+			current
+		);
+		const looped =
+			working[Q(size, neighbourCoordinate)]?.[R(size, neighbourCoordinate)];
+		if (looped) {
+			const loopIndex =
+				path.findIndex(
+					({ coordinate }) =>
+						coordinate.q === neighbourCoordinate.q &&
+						coordinate.r === neighbourCoordinate.r
+				) + 1;
+			for (let i = loopIndex; i < path.length; i++) {
+				const { coordinate } = path[i]!;
+				const q = Q(size, coordinate);
+				const r = R(size, coordinate);
+				delete working[q]![r];
+				if (working[q]!.length === 0) {
+					delete working[q];
+				}
+			}
+			path = path.slice(0, loopIndex);
+
+			continue;
+		} else {
+			const { forwards, backwards } = asConnections(direction);
+			path.at(-1)!.forwards = forwards;
+			path.push({
+				coordinate: neighbourCoordinate,
+				forwards: 0,
+				backwards,
+			});
+			const end =
+				!remaining[Q(size, neighbourCoordinate)]?.[
+					R(size, neighbourCoordinate)
+				];
+			if (end) {
+				return path;
+			}
+			working[Q(size, neighbourCoordinate)] ??= [];
+			working[Q(size, neighbourCoordinate)]![R(size, neighbourCoordinate)] =
+				true;
+		}
+	}
+};
 
 // https://en.wikipedia.org/wiki/Loop-erased_random_walk
 export default ({ size, seed }: Config): Cell[] => {
-	const asIndex = (x: number) => x + size;
-
 	const random = Seedrandom(seed);
-	const RandomNeighbour = (size: number, coordinate: Coordinate): Neighbour => {
-		const neighbours = ValidNeighbours(size, coordinate);
-		const randomIndex = Math.floor(random() * neighbours.length);
-		return neighbours[randomIndex]!;
-	};
-
-	const loopErasedRandomWalk = (
-		start: Coordinate,
-		remaining: QR<Coordinate>
-	): Segment[] => {
-		const working: QR<Coordinate> = [];
-		let path: Segment[] = [
-			{
-				coordinate: start,
-				forwards: 0,
-				backwards: 0,
-			},
-		];
-		working[asIndex(start.q)] ??= [];
-		working[asIndex(start.q)]![asIndex(start.r)] = start;
-		while (true) {
-			const current = path.at(-1)!.coordinate;
-			const { coordinate: neighbourCoordinate, direction } = RandomNeighbour(
-				size,
-				current
-			);
-			const looped =
-				working[asIndex(neighbourCoordinate.q)]?.[
-					asIndex(neighbourCoordinate.r)
-				];
-			if (looped) {
-				const loopIndex =
-					path.findIndex(
-						({ coordinate }) =>
-							coordinate.q === neighbourCoordinate.q &&
-							coordinate.r === neighbourCoordinate.r
-					) + 1;
-				for (let i = loopIndex; i < path.length; i++) {
-					const { coordinate } = path[i]!;
-					const q = asIndex(coordinate.q);
-					const r = asIndex(coordinate.r);
-					delete working[q]![r];
-					if (working[q]!.length === 0) {
-						delete working[q];
-					}
-				}
-				path = path.slice(0, loopIndex);
-
-				continue;
-			} else {
-				const { forwards, backwards } = asConnections(direction);
-				path.at(-1)!.forwards = forwards;
-				path.push({
-					coordinate: neighbourCoordinate,
-					forwards: 0,
-					backwards,
-				});
-				const end =
-					!remaining[asIndex(neighbourCoordinate.q)]?.[
-						asIndex(neighbourCoordinate.r)
-					];
-				if (end) {
-					return path;
-				}
-				working[asIndex(neighbourCoordinate.q)] ??= [];
-				working[asIndex(neighbourCoordinate.q)]![
-					asIndex(neighbourCoordinate.r)
-				] = neighbourCoordinate;
-			}
-		}
-	};
 
 	const coordinates: Coordinate[] = CoordinatesGenerator(size);
 	const solution: QR<DenormalConnection> = [];
 	const remaining: QR<Coordinate> = [];
 	let remainingCount = 0;
 	for (const coordinate of coordinates) {
-		remaining[asIndex(coordinate.q)] ??= [];
-		remaining[asIndex(coordinate.q)]![asIndex(coordinate.r)] = coordinate;
+		remaining[Q(size, coordinate)] ??= [];
+		remaining[Q(size, coordinate)]![R(size, coordinate)] = coordinate;
 		remainingCount += 1;
 	}
 
@@ -153,10 +158,10 @@ export default ({ size, seed }: Config): Cell[] => {
 				randomRemainingIndex -= 1;
 			}
 		}
-		const path = loopErasedRandomWalk(current!, remaining);
+		const path = loopErasedRandomWalk(size, random, current!, remaining);
 		for (const { coordinate, forwards, backwards } of path) {
-			const q = asIndex(coordinate.q);
-			const r = asIndex(coordinate.r);
+			const q = Q(size, coordinate);
+			const r = R(size, coordinate);
 			if (remaining[q]![r]) {
 				delete remaining[q]![r];
 				if (remaining[q]!.length === 0) {
@@ -172,7 +177,7 @@ export default ({ size, seed }: Config): Cell[] => {
 	const cells = [];
 	for (const coordinate of coordinates) {
 		const denormalConnection =
-			solution[asIndex(coordinate.q)]![asIndex(coordinate.r)]!;
+			solution[Q(size, coordinate)]![R(size, coordinate)]!;
 		const randomOrientationIndex = Math.floor(random() * Orientations.length);
 		const orientation = Orientations[randomOrientationIndex]!;
 		const connection = normalizeConnection(denormalConnection);
