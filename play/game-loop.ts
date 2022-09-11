@@ -121,13 +121,30 @@ const drawCell = (
 
 const drawGameOverCell = (
 	ctx: Context2D,
+	time: DOMHighResTimeStamp,
 	{ coordinate, orientation, connection }: Cell,
 	l: number
 ) => {
 	drawCellBackground(ctx, coordinate);
 
 	ctx.save();
-	ctx.rotate((orientation.value * Math.PI) / 180);
+	const t = easing(
+		Math.min((time - orientation.startTime) / orientation.duration, 1)
+	);
+	ctx.rotate(
+		(lerp(
+			t,
+			orientation.animate === "clockwise"
+				? orientation.value - 60
+				: orientation.value + 60,
+			orientation.value
+		) *
+			Math.PI) /
+			180
+	);
+	if (t < 1) {
+		ctx.draw();
+	}
 	ctx.fillStyle = ctx.strokeStyle = `hsl(51deg 100% ${l}%)`;
 	drawEdges(ctx, connection);
 	ctx.restore();
@@ -687,7 +704,7 @@ const gameLoop: GameLoop =
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 3;
+		const size = 1;
 		if (!memory["state"]) {
 			const cells: QR<Cell> = [];
 			const config = {
@@ -822,7 +839,7 @@ const gameLoop: GameLoop =
 						const y = (3 / 2) * cellR;
 						ctx.save();
 						ctx.translate(x, y);
-						drawGameOverCell(ctx, cell, l);
+						drawGameOverCell(ctx, time, cell, l);
 						ctx.restore();
 					}
 				}
