@@ -100,8 +100,8 @@ export type Context2D = {
 	scale(x: number, y: number): void;
 	rotate(angle: number): void;
 
-	interactible(key: string, path: Path2D): void;
-	interacted(key: string): boolean;
+	interactible(key: number, path: Path2D): void;
+	interacted(key: number): boolean;
 
 	draw(): void;
 };
@@ -189,7 +189,7 @@ type LineTo = {
 };
 type Interactible = {
 	type: "interactible";
-	key: string;
+	key: number;
 	path: Path2D;
 };
 
@@ -306,14 +306,14 @@ const context2D: Context2D = {
 		});
 	},
 
-	interactible(key: string, path: Path2D) {
+	interactible(key: number, path: Path2D) {
 		renderQueue.push({
 			type: "interactible",
 			key,
 			path,
 		});
 	},
-	interacted(key: string) {
+	interacted(key: number) {
 		return previousInteractibles[key]?.interacted ?? false;
 	},
 
@@ -330,8 +330,8 @@ type InteractibleSnapshot = {
 	path: Path2D;
 	interacted: boolean;
 };
-let previousInteractibles: Record<string, InteractibleSnapshot> = {};
-let currentInteractibles: Record<string, InteractibleSnapshot> = {};
+let previousInteractibles: Record<number, InteractibleSnapshot> = {};
+let currentInteractibles: Record<number, InteractibleSnapshot> = {};
 
 const requestDraw = () => {
 	if (raf) {

@@ -1,5 +1,4 @@
-import { Coordinate, Connection, Orientation } from "../game-loop";
-import Prims from "./prims";
+import { Connection, Orientation } from "../game-loop";
 import Wilsons from "./wilsons";
 
 const Modes = ["prims", "wilsons"] as const;
@@ -13,7 +12,8 @@ export const validMode = (value: any): value is Mode => {
 	return Modes.includes(value);
 };
 export type Cell = {
-	coordinate: Coordinate;
+	q: number;
+	r: number;
 	orientation: Orientation;
 	connection: Connection;
 };
@@ -92,42 +92,48 @@ type Direction =
 	| 3 // -q
 	| 4 // s
 	| 5; // -r
-export type Neighbour = { coordinate: Coordinate; direction: Direction };
-const Neighbours = ({ q, r, s }: Coordinate): Neighbour[] => {
+export type Neighbour = { q: number; r: number; direction: Direction };
+const Neighbours = (q: number, r: number): Neighbour[] => {
 	return [
 		// q
 		{
-			coordinate: { q, r: r - 1, s: s + 1 },
+			q,
+			r: r - 1,
 			direction: 0,
 		},
 
 		// -s
 		{
-			coordinate: { q: q + 1, r: r - 1, s },
+			q: q + 1,
+			r: r - 1,
 			direction: 1,
 		},
 
 		// r
 		{
-			coordinate: { q: q + 1, r, s: s - 1 },
+			q: q + 1,
+			r,
 			direction: 2,
 		},
 
 		// -q
 		{
-			coordinate: { q, r: r + 1, s: s - 1 },
+			q,
+			r: r + 1,
 			direction: 3,
 		},
 
 		// s
 		{
-			coordinate: { q: q - 1, r: r + 1, s },
+			q: q - 1,
+			r: r + 1,
 			direction: 4,
 		},
 
 		// -r
 		{
-			coordinate: { q: q - 1, r, s: s + 1 },
+			q: q - 1,
+			r,
 			direction: 5,
 		},
 	];
@@ -135,37 +141,22 @@ const Neighbours = ({ q, r, s }: Coordinate): Neighbour[] => {
 
 export const ValidNeighbours = (
 	size: number,
-	coordinate: Coordinate
+	q: number,
+	r: number
 ): Neighbour[] =>
-	Neighbours(coordinate).filter(({ coordinate: { q, r, s } }) => {
-		if (q < -size || q > size) {
-			return false;
-		}
-		if (r < -size || r > size) {
-			return false;
-		}
-		if (s < -size || s > size) {
+	Neighbours(q, r).filter(({ q, r }) => {
+		if (
+			q < 0 ||
+			q > 2 * size ||
+			r < 0 ||
+			r > 2 * size ||
+			q + r < size ||
+			q + r > 3 * size
+		) {
 			return false;
 		}
 		return true;
 	});
-
-export const CoordinatesGenerator = (size: number): Coordinate[] => {
-	const coordinates = [];
-	for (let q = -size; q <= size; q++) {
-		for (let r = -size; r <= size; r++) {
-			const s = -q - r;
-			if (-size <= s && s <= size) {
-				coordinates.push({
-					q,
-					r,
-					s,
-				});
-			}
-		}
-	}
-	return coordinates;
-};
 
 export const asConnections = (
 	direction: Direction
@@ -180,11 +171,5 @@ export const asConnections = (
 };
 
 export default (config: Config): Cell[] => {
-	const { mode } = config;
-	switch (mode) {
-		case "prims":
-			return Prims(config);
-		case "wilsons":
-			return Wilsons(config);
-	}
+	return Wilsons(config);
 };

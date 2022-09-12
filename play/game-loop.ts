@@ -3,16 +3,12 @@ import PuzzleGenerator from "./puzzle-generator";
 export type Coordinate = {
 	q: number;
 	r: number;
-	s: number;
 };
-export type CoordinateKey =
-	`${Coordinate["q"]} ${Coordinate["r"]} ${Coordinate["s"]}`;
-export const asCoordinateKey = ({ q, r, s }: Coordinate): CoordinateKey =>
-	`${q} ${r} ${s}`;
 
 type Milliseconds = number;
 type Cell = {
-	coordinate: Coordinate;
+	q: number;
+	r: number;
 	orientation: {
 		value: Orientation;
 		animate: "clockwise" | "counter-clockwise";
@@ -61,12 +57,14 @@ const lerp = (t: number, a: number, b: number): number => {
 
 const drawCellBackground = (
 	ctx: Context2D,
-	coordinate: Coordinate
+	size: number,
+	q: number,
+	r: number
 ): boolean => {
 	ctx.save();
 	ctx.scale(0.855, 0.855);
 	ctx.fill(hexagon);
-	const interactionKey = asCoordinateKey(coordinate);
+	const interactionKey = (2 * size + 1) * q + r;
 	ctx.interactible(interactionKey, hexagon);
 	ctx.restore();
 	return ctx.interacted(interactionKey);
@@ -77,9 +75,10 @@ const easing = BezierEasing(0.25, 0.1, 0.25, 1);
 const drawCell = (
 	ctx: Context2D,
 	time: DOMHighResTimeStamp,
-	{ coordinate, orientation, connection, color }: Cell
+	size: number,
+	{ q, r, orientation, connection, color }: Cell
 ): boolean => {
-	const clicked = drawCellBackground(ctx, coordinate);
+	const clicked = drawCellBackground(ctx, size, q, r);
 
 	ctx.save();
 	const t = easing(
@@ -122,10 +121,11 @@ const drawCell = (
 const drawGameOverCell = (
 	ctx: Context2D,
 	time: DOMHighResTimeStamp,
-	{ coordinate, orientation, connection }: Cell,
+	size: number,
+	{ q, r, orientation, connection }: Cell,
 	l: number
 ) => {
-	drawCellBackground(ctx, coordinate);
+	drawCellBackground(ctx, size, q, r);
 
 	ctx.save();
 	const t = easing(
@@ -451,8 +451,6 @@ const mostCommonColor = (
 };
 
 type QR<T> = T[][];
-const Q = (size: number, { q }: Coordinate) => size + q;
-const R = (size: number, { r }: Coordinate) => size + r;
 
 const QRSize = <T>(size: number, qr: QR<T>): number => {
 	let count = 0;
@@ -622,75 +620,69 @@ const updateColors = (size: number, cells: QR<Cell>, spans: Spans) => {
 	}
 };
 const rotate = (
-	coordinate: Coordinate,
+	size: number,
+	q: number,
+	r: number,
 	orientation: Orientation,
-	origin: Coordinate
+	originQ: number,
+	originR: number
 ): Coordinate => {
-	coordinate.q -= origin.q;
-	coordinate.r -= origin.r;
-	coordinate.s -= origin.s;
+	q -= size;
+	r -= size;
+	originQ -= size;
+	originR -= size;
+	let resultQ = q - originQ;
+	let resultR = r - originR;
+	const s = -q - r;
+	const originS = -originQ - originR;
+	let resultS = s - originS;
 	while (orientation > 0) {
-		const next = {
-			q: -coordinate.r,
-			r: -coordinate.s,
-			s: -coordinate.q,
-		};
-		coordinate = next;
+		const nextQ = -resultR;
+		const nextR = -resultS;
+		const nextS = -resultQ;
+		resultQ = nextQ;
+		resultR = nextR;
+		resultS = nextS;
 		orientation -= 60;
 	}
-	coordinate.q += origin.q;
-	coordinate.r += origin.r;
-	coordinate.s += origin.s;
-	return coordinate;
+	resultQ += originQ;
+	resultR += originR;
+	return { q: resultQ + size, r: resultR + size };
 };
 
-const Neighbours = ({
-	coordinate,
-	orientation: { value: orientation },
-	connection,
-}: Cell): Coordinate[] => {
+const Neighbours = (
+	size: number,
+	{ q, r, orientation: { value: orientation }, connection }: Cell
+): Coordinate[] => {
 	const coordinates = [];
-	const { q, r, s } = coordinate;
 	// r
 	if (connection & 0b100000) {
-		coordinates.push(
-			rotate({ q: q + 1, r, s: s - 1 }, orientation, coordinate)
-		);
+		coordinates.push(rotate(size, q + 1, r, orientation, q, r));
 	}
 
 	// -q
 	if (connection & 0b010000) {
-		coordinates.push(
-			rotate({ q, r: r + 1, s: s - 1 }, orientation, coordinate)
-		);
+		coordinates.push(rotate(size, q, r + 1, orientation, q, r));
 	}
 
 	// s
 	if (connection & 0b001000) {
-		coordinates.push(
-			rotate({ q: q - 1, r: r + 1, s }, orientation, coordinate)
-		);
+		coordinates.push(rotate(size, q - 1, r + 1, orientation, q, r));
 	}
 
 	// -r
 	if (connection & 0b000100) {
-		coordinates.push(
-			rotate({ q: q - 1, r, s: s + 1 }, orientation, coordinate)
-		);
+		coordinates.push(rotate(size, q - 1, r, orientation, q, r));
 	}
 
 	// q
 	if (connection & 0b000010) {
-		coordinates.push(
-			rotate({ q, r: r - 1, s: s + 1 }, orientation, coordinate)
-		);
+		coordinates.push(rotate(size, q, r - 1, orientation, q, r));
 	}
 
 	// -s
 	if (connection & 0b000001) {
-		coordinates.push(
-			rotate({ q: q + 1, r: r - 1, s }, orientation, coordinate)
-		);
+		coordinates.push(rotate(size, q + 1, r - 1, orientation, q, r));
 	}
 	return coordinates;
 };
@@ -703,17 +695,15 @@ const updateFacingNeighbours = (
 	facingNeighboursByCoordinate: FacingNeighboursByCoordinate
 ) => {
 	const cell = cells[q]![r]!;
-	for (const neighbour of Neighbours(cell)) {
-		const neighbourCell = cells[Q(size, neighbour)]?.[R(size, neighbour)];
+	for (const { q: neighbourQ, r: neighbourR } of Neighbours(size, cell)) {
+		const neighbourCell = cells[neighbourQ]?.[neighbourR];
 		if (!neighbourCell) {
 			continue;
 		}
 		facingNeighboursByCoordinate[q] ??= [];
 		facingNeighboursByCoordinate[q]![r] ??= [];
-		facingNeighboursByCoordinate[q]![r]![Q(size, neighbour)] ??= [];
-		facingNeighboursByCoordinate[q]![r]![Q(size, neighbour)]![
-			R(size, neighbour)
-		] = true;
+		facingNeighboursByCoordinate[q]![r]![neighbourQ] ??= [];
+		facingNeighboursByCoordinate[q]![r]![neighbourQ]![neighbourR] = true;
 	}
 };
 
@@ -725,7 +715,7 @@ const gameLoop: GameLoop =
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 1;
+		const size = 3;
 		if (!memory["state"]) {
 			const cells: QR<Cell> = [];
 			const config = {
@@ -733,12 +723,11 @@ const gameLoop: GameLoop =
 				seed: "9f96afb4-47ea-4ef8-8a18-7b8fa218573f",
 				mode: "wilsons",
 			} as const;
-			for (const { coordinate, orientation, connection } of PuzzleGenerator(
-				config
-			)) {
-				cells[Q(size, coordinate)] ??= [];
-				cells[Q(size, coordinate)]![R(size, coordinate)] = {
-					coordinate,
+			for (const { q, r, orientation, connection } of PuzzleGenerator(config)) {
+				cells[q] ??= [];
+				cells[q]![r] = {
+					q,
+					r,
 					orientation: {
 						value: orientation,
 						animate: "clockwise",
@@ -788,17 +777,17 @@ const gameLoop: GameLoop =
 							continue;
 						}
 						const cell = cells[q]![r]!;
-						const {
-							coordinate: { q: cellQ, r: cellR },
-						} = cell;
+						const { q: cellQ, r: cellR } = cell;
 						// Q basis [Math.sqrt(3), 0]
 						// R basis [Math.sqrt(3) / 2, 3 / 2]
 						// [x, y] = Q basis * q + R basis * r
-						const x = 2 * hexagonUnitHeight * cellQ + hexagonUnitHeight * cellR;
-						const y = (3 / 2) * cellR;
+						const x =
+							2 * hexagonUnitHeight * (cellQ - size) +
+							hexagonUnitHeight * (cellR - size);
+						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						if (drawCell(ctx, time, cell)) {
+						if (drawCell(ctx, time, size, cell)) {
 							cell.orientation.value += 60;
 							cell.orientation.value %= 360;
 							cell.orientation.animate = "clockwise";
@@ -850,17 +839,17 @@ const gameLoop: GameLoop =
 							continue;
 						}
 						const cell = cells[q]![r]!;
-						const {
-							coordinate: { q: cellQ, r: cellR },
-						} = cell;
+						const { q: cellQ, r: cellR } = cell;
 						// Q basis [Math.sqrt(3), 0]
 						// R basis [Math.sqrt(3) / 2, 3 / 2]
 						// [x, y] = Q basis * q + R basis * r
-						const x = 2 * hexagonUnitHeight * cellQ + hexagonUnitHeight * cellR;
-						const y = (3 / 2) * cellR;
+						const x =
+							2 * hexagonUnitHeight * (cellQ - size) +
+							hexagonUnitHeight * (cellR - size);
+						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						drawGameOverCell(ctx, time, cell, l);
+						drawGameOverCell(ctx, time, size, cell, l);
 						ctx.restore();
 					}
 				}

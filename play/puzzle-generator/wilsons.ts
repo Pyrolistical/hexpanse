@@ -1,11 +1,10 @@
-import { Coordinate, Orientations } from "../game-loop";
+import { Orientations } from "../game-loop";
 
 import Seedrandom from "seedrandom";
 
 import {
 	Config,
 	Cell,
-	CoordinatesGenerator,
 	DenormalConnection,
 	ValidNeighbours,
 	asConnections,
@@ -14,21 +13,21 @@ import {
 } from "./";
 
 type Segment = {
-	coordinate: Coordinate;
+	q: number;
+	r: number;
 	forwards: DenormalConnection;
 	backwards: DenormalConnection;
 };
 
 type QR<T> = T[][];
-const Q = (size: number, { q }: Coordinate) => size + q;
-const R = (size: number, { r }: Coordinate) => size + r;
 
 const RandomNeighbour = (
 	random: Seedrandom.PRNG,
 	size: number,
-	coordinate: Coordinate
+	q: number,
+	r: number
 ): Neighbour => {
-	const neighbours = ValidNeighbours(size, coordinate);
+	const neighbours = ValidNeighbours(size, q, r);
 	const randomIndex = Math.floor(random() * neighbours.length);
 	return neighbours[randomIndex]!;
 };
@@ -36,39 +35,34 @@ const RandomNeighbour = (
 const loopErasedRandomWalk = (
 	size: number,
 	random: Seedrandom.PRNG,
-	start: Coordinate,
-	remaining: QR<Coordinate>
+	q: number,
+	r: number,
+	remaining: QR<boolean>
 ): Segment[] => {
 	const working: QR<boolean> = [];
 	let path: Segment[] = [
 		{
-			coordinate: start,
+			q,
+			r,
 			forwards: 0,
 			backwards: 0,
 		},
 	];
-	working[Q(size, start)] ??= [];
-	working[Q(size, start)]![R(size, start)] = true;
+	working[q] ??= [];
+	working[q]![r] = true;
 	while (true) {
-		const current = path.at(-1)!.coordinate;
-		const { coordinate: neighbourCoordinate, direction } = RandomNeighbour(
-			random,
-			size,
-			current
-		);
-		const looped =
-			working[Q(size, neighbourCoordinate)]?.[R(size, neighbourCoordinate)];
+		const { q, r } = path.at(-1)!;
+		const {
+			q: neighbourQ,
+			r: neighbourR,
+			direction,
+		} = RandomNeighbour(random, size, q, r);
+		const looped = working[neighbourQ]?.[neighbourR];
 		if (looped) {
 			const loopIndex =
-				path.findIndex(
-					({ coordinate }) =>
-						coordinate.q === neighbourCoordinate.q &&
-						coordinate.r === neighbourCoordinate.r
-				) + 1;
+				path.findIndex(({ q, r }) => q === neighbourQ && r === neighbourR) + 1;
 			for (let i = loopIndex; i < path.length; i++) {
-				const { coordinate } = path[i]!;
-				const q = Q(size, coordinate);
-				const r = R(size, coordinate);
+				const { q, r } = path[i]!;
 				delete working[q]![r];
 				if (working[q]!.length === 0) {
 					delete working[q];
@@ -81,20 +75,17 @@ const loopErasedRandomWalk = (
 			const { forwards, backwards } = asConnections(direction);
 			path.at(-1)!.forwards = forwards;
 			path.push({
-				coordinate: neighbourCoordinate,
+				q: neighbourQ,
+				r: neighbourR,
 				forwards: 0,
 				backwards,
 			});
-			const end =
-				!remaining[Q(size, neighbourCoordinate)]?.[
-					R(size, neighbourCoordinate)
-				];
+			const end = !remaining[neighbourQ]?.[neighbourR];
 			if (end) {
 				return path;
 			}
-			working[Q(size, neighbourCoordinate)] ??= [];
-			working[Q(size, neighbourCoordinate)]![R(size, neighbourCoordinate)] =
-				true;
+			working[neighbourQ] ??= [];
+			working[neighbourQ]![neighbourR] = true;
 		}
 	}
 };
@@ -103,14 +94,18 @@ const loopErasedRandomWalk = (
 export default ({ size, seed }: Config): Cell[] => {
 	const random = Seedrandom(seed);
 
-	const coordinates: Coordinate[] = CoordinatesGenerator(size);
 	const solution: QR<DenormalConnection> = [];
-	const remaining: QR<Coordinate> = [];
+	const remaining: QR<boolean> = [];
 	let remainingCount = 0;
-	for (const coordinate of coordinates) {
-		remaining[Q(size, coordinate)] ??= [];
-		remaining[Q(size, coordinate)]![R(size, coordinate)] = coordinate;
-		remainingCount += 1;
+	for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			remaining[q] ??= [];
+			remaining[q]![r] = true;
+			remainingCount += 1;
+		}
 	}
 
 	// start
@@ -135,10 +130,9 @@ export default ({ size, seed }: Config): Cell[] => {
 		}
 	}
 
-	while (remainingCount > 0) {
+	remaining: while (remainingCount > 0) {
 		let randomRemainingIndex = Math.floor(random() * remainingCount);
-		let current: Coordinate;
-		q: for (let q = 0; q <= 2 * size; q++) {
+		for (let q = 0; q <= 2 * size; q++) {
 			for (let r = 0; r <= 2 * size; r++) {
 				if (q + r < size || q + r > 3 * size) {
 					continue;
@@ -147,45 +141,48 @@ export default ({ size, seed }: Config): Cell[] => {
 					continue;
 				}
 				if (randomRemainingIndex === 0) {
-					current = remaining[q]![r]!;
 					delete remaining[q]![r];
 					if (remaining[q]!.length === 0) {
 						delete remaining[q];
 					}
 					remainingCount -= 1;
-					break q;
+
+					const path = loopErasedRandomWalk(size, random, q, r, remaining);
+					for (const { q, r, forwards, backwards } of path) {
+						if (remaining[q]![r]) {
+							delete remaining[q]![r];
+							if (remaining[q]!.length === 0) {
+								delete remaining[q];
+							}
+							remainingCount -= 1;
+						}
+						solution[q] ??= [];
+						solution[q]![r] |= forwards | backwards;
+					}
+					continue remaining;
 				}
 				randomRemainingIndex -= 1;
 			}
 		}
-		const path = loopErasedRandomWalk(size, random, current!, remaining);
-		for (const { coordinate, forwards, backwards } of path) {
-			const q = Q(size, coordinate);
-			const r = R(size, coordinate);
-			if (remaining[q]![r]) {
-				delete remaining[q]![r];
-				if (remaining[q]!.length === 0) {
-					delete remaining[q];
-				}
-				remainingCount -= 1;
-			}
-			solution[q] ??= [];
-			solution[q]![r] |= forwards | backwards;
-		}
 	}
 
 	const cells = [];
-	for (const coordinate of coordinates) {
-		const denormalConnection =
-			solution[Q(size, coordinate)]![R(size, coordinate)]!;
-		const randomOrientationIndex = Math.floor(random() * Orientations.length);
-		const orientation = Orientations[randomOrientationIndex]!;
-		const connection = normalizeConnection(denormalConnection);
-		cells.push({
-			coordinate,
-			orientation,
-			connection,
-		});
+	for (let q = 0; q <= 2 * size; q++) {
+		for (let r = 0; r <= 2 * size; r++) {
+			if (q + r < size || q + r > 3 * size) {
+				continue;
+			}
+			const denormalConnection = solution[q]![r]!;
+			const randomOrientationIndex = Math.floor(random() * Orientations.length);
+			const orientation = Orientations[randomOrientationIndex]!;
+			const connection = normalizeConnection(denormalConnection);
+			cells.push({
+				q,
+				r,
+				orientation,
+				connection,
+			});
+		}
 	}
 	return cells;
 };
