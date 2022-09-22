@@ -57,34 +57,27 @@ const lerp = (t: number, a: number, b: number): number => {
 	return (1 - t) * a + t * b;
 };
 
-const drawCellBackground = (
-	ctx: Context2D,
-	size: number,
-	q: number,
-	r: number
-): boolean => {
+const drawCellBackground = (ctx: CanvasRenderingContext2D): boolean => {
 	ctx.save();
 	ctx.scale(0.855, 0.855);
 	ctx.fill(hexagon);
-	const interactionKey = (2 * size + 1) * q + r;
-	ctx.interactible(interactionKey, hexagon);
+	const clicked = false; //ctx.isPointInPath(hexagon, x, y);
 	ctx.restore();
-	return ctx.interacted(interactionKey);
+	return clicked;
 };
 
 import BezierEasing from "bezier-easing";
 const easing = BezierEasing(0.25, 0.1, 0.25, 1);
 const drawCell = (
-	ctx: Context2D,
-	time: DOMHighResTimeStamp,
-	size: number,
-	{ q, r, orientation, connection, color }: Cell
+	frame: Frame,
+	ctx: CanvasRenderingContext2D,
+	{ orientation, connection, color }: Cell
 ): boolean => {
-	const clicked = drawCellBackground(ctx, size, q, r);
+	const clicked = drawCellBackground(ctx);
 
 	ctx.save();
 	const t = easing(
-		Math.min((time - orientation.startTime) / orientation.duration, 1)
+		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
 	);
 	ctx.rotate(
 		(lerp(
@@ -98,7 +91,7 @@ const drawCell = (
 			180
 	);
 	if (t < 1) {
-		ctx.draw();
+		frame.next();
 	}
 	switch (color) {
 		case "none":
@@ -121,17 +114,16 @@ const drawCell = (
 };
 
 const drawGameOverCell = (
-	ctx: Context2D,
-	time: DOMHighResTimeStamp,
-	size: number,
-	{ q, r, orientation, connection }: Cell,
+	frame: Frame,
+	ctx: CanvasRenderingContext2D,
+	{ orientation, connection }: Cell,
 	l: number
 ) => {
-	drawCellBackground(ctx, size, q, r);
+	drawCellBackground(ctx);
 
 	ctx.save();
 	const t = easing(
-		Math.min((time - orientation.startTime) / orientation.duration, 1)
+		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
 	);
 	ctx.rotate(
 		(lerp(
@@ -145,14 +137,14 @@ const drawGameOverCell = (
 			180
 	);
 	if (t < 1) {
-		ctx.draw();
+		frame.next();
 	}
 	ctx.fillStyle = ctx.strokeStyle = `hsl(51deg 100% ${l}%)`;
 	drawEdges(ctx, connection);
 	ctx.restore();
 };
 
-const drawEdges = (ctx: Context2D, connection: Connection) => {
+const drawEdges = (ctx: CanvasRenderingContext2D, connection: Connection) => {
 	switch (connection) {
 		case 0b100000: // i
 			ctx.save();
@@ -709,17 +701,24 @@ const updateFacingNeighbours = (
 	}
 };
 
-import type { GameLoop, Context2D } from "./index";
+import type { GameLoop, Frame } from "../play/index";
 
-const gameLoop: GameLoop =
-	(memory) =>
-	(ctx, time, [width, height]) => {
+export default async (
+	ctx: CanvasRenderingContext2D,
+	frame: Frame
+): Promise<GameLoop> => {
+	let state: "boot" | "playing" | "game over" = "boot";
+	let cells: QR<Cell>;
+	let facingNeighboursByCoordinate: FacingNeighboursByCoordinate;
+	return () => {
+		const width = frame.width();
+		const height = frame.height();
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 
-		const size = 3;
-		if (!memory["state"]) {
-			const cells: QR<Cell> = [];
+		const size = 13;
+		if (state === "boot") {
+			cells = [];
 			const config = {
 				size,
 				seed: "9f96afb4-47ea-4ef8-8a18-7b8fa218573f",
@@ -740,9 +739,8 @@ const gameLoop: GameLoop =
 					color: "none",
 				};
 			}
-			memory["cells"] = cells;
-			memory["state"] = "playing";
-			const facingNeighboursByCoordinate: FacingNeighboursByCoordinate = [];
+			state = "playing";
+			facingNeighboursByCoordinate = [];
 			for (let q = 0; q <= 2 * size; q++) {
 				for (let r = 0; r <= 2 * size; r++) {
 					if (q + r < size || q + r > 3 * size) {
@@ -757,12 +755,11 @@ const gameLoop: GameLoop =
 					);
 				}
 			}
-			memory["facingNeighboursByCoordinate"] = facingNeighboursByCoordinate;
-			const spans = calculateSpans(size, facingNeighboursByCoordinate);
-			updateColors(size, cells, spans);
+			// const spans = calculateSpans(size, facingNeighboursByCoordinate);
+			// updateColors(size, cells, spans);
 		}
 
-		switch (memory["state"]) {
+		switch (state) {
 			case "playing": {
 				ctx.save();
 				ctx.translate(width / 2, height / 2);
@@ -771,7 +768,6 @@ const gameLoop: GameLoop =
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				const cells: QR<Cell> = memory["cells"];
 				ctx.fillStyle = cellBackground;
 				for (let q = 0; q <= 2 * size; q++) {
 					for (let r = 0; r <= 2 * size; r++) {
@@ -789,14 +785,12 @@ const gameLoop: GameLoop =
 						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						if (drawCell(ctx, time, size, cell)) {
+						if (drawCell(frame, ctx, cell)) {
 							cell.orientation.value += 60;
 							cell.orientation.value %= 360;
 							cell.orientation.animate = "clockwise";
-							cell.orientation.startTime = time;
+							cell.orientation.startTime = frame.time();
 
-							const facingNeighboursByCoordinate: FacingNeighboursByCoordinate =
-								memory["facingNeighboursByCoordinate"];
 							delete facingNeighboursByCoordinate[q]?.[r];
 							if (facingNeighboursByCoordinate[q]?.length === 0) {
 								delete facingNeighboursByCoordinate[q];
@@ -810,17 +804,17 @@ const gameLoop: GameLoop =
 							);
 							const spans = calculateSpans(size, facingNeighboursByCoordinate);
 							if (Object.values(spans).length === 1) {
-								memory["state"] = "game over";
+								state = "game over";
 							} else {
 								updateColors(size, cells, spans);
 							}
-							ctx.draw();
+							frame.next();
 						}
 						ctx.restore();
 					}
 				}
 				ctx.restore();
-				break;
+				return;
 			}
 
 			case "game over": {
@@ -831,9 +825,8 @@ const gameLoop: GameLoop =
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				const cells: QR<Cell> = memory["cells"];
 				ctx.fillStyle = cellBackground;
-				const t = (Math.cos(Math.PI * (time / 2000)) + 1) / 2;
+				const t = (Math.cos(Math.PI * (frame.time() / 2000)) + 1) / 2;
 				const l = Math.round(lerp(t, 50, 100));
 				for (let q = 0; q <= 2 * size; q++) {
 					for (let r = 0; r <= 2 * size; r++) {
@@ -851,15 +844,13 @@ const gameLoop: GameLoop =
 						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						drawGameOverCell(ctx, time, size, cell, l);
+						drawGameOverCell(frame, ctx, cell, l);
 						ctx.restore();
 					}
 				}
 				ctx.restore();
-				ctx.draw();
-				break;
+				return;
 			}
 		}
 	};
-
-export default gameLoop;
+};

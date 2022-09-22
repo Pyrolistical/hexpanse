@@ -66,8 +66,7 @@ fn lerp(t: f64, a: f64, b: f64) f64 {
     return (1 - t) * a + t * b;
 }
 
-pub fn cellBackgroundAndEdges(time: f64, size: i8, cell: Cell) void {
-    _ = time;
+pub fn cellBackgroundAndEdges(size: i8, cell: Cell) void {
     _ = size;
     // const q = cell.q;
     // const r = cell.r;
@@ -77,7 +76,7 @@ pub fn cellBackgroundAndEdges(time: f64, size: i8, cell: Cell) void {
     cellBackground(); //size, q, r);
 
     ctx.save();
-    const t = 1; //easing(math.min((time - orientation.startTime) / orientation.duration, 1));
+    const t = 1; //easing(math.min((time - orientation.startTime) / 250, 1));
     const startAngle = @intToFloat(f64, if (orientation.animate == RotationDirection.clockwise)
         @enumToInt(orientation.value) - 60
     else

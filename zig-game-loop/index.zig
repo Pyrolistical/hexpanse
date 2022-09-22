@@ -4,6 +4,7 @@ const math = std.math;
 const allocator = std.heap.page_allocator;
 
 const env = @import("env.zig");
+const frame = @import("frame.zig");
 const ctx = @import("canvas.zig");
 const elements = @import("elements.zig");
 const hexagonUnitHeight = elements.hexagonUnitHeight;
@@ -26,7 +27,6 @@ const OrientationAnimation = struct {
     value: Orientation,
     animate: RotationDirection,
     startTime: f64,
-    duration: Milliseconds,
 };
 pub const Connection = enum(u8) {
     // r -q s -r q -s
@@ -56,15 +56,13 @@ pub const Cell = struct { q: i8, r: i8, orientation: OrientationAnimation, conne
 
 const State = enum { loading, playing };
 var state = State.loading;
-const Result = enum(u32) { Idle = 0, Draw = 1, OutOfMemory = 0xffffffff };
 var cells: [][]Cell = undefined;
-export fn gameLoop(time: f64, width: f64, height: f64) Result {
-    const draw = maybeGameLoop(time, width, height) catch return Result.OutOfMemory;
-    return if (draw) Result.Draw else Result.Idle;
+export fn gameLoop() void {
+    maybeGameLoop() catch @panic("out of memory");
 }
 
-fn maybeGameLoop(time: f64, width: f64, height: f64) !bool {
-    const size: u8 = 2;
+fn maybeGameLoop() !void {
+    const size: u8 = 13;
     const seed: u64 = 42;
     if (state == State.loading) {
         elements.init();
@@ -75,6 +73,8 @@ fn maybeGameLoop(time: f64, width: f64, height: f64) !bool {
         try PuzzleGenerator.create(size, seed, cells);
         state = State.playing;
     }
+    const width = frame.width();
+    const height = frame.height();
 
     elements.background(width, height);
 
@@ -101,12 +101,11 @@ fn maybeGameLoop(time: f64, width: f64, height: f64) !bool {
                 ctx.save();
                 ctx.translate(x, y);
             }
-            elements.cellBackgroundAndEdges(time, size, cell);
+            elements.cellBackgroundAndEdges(size, cell);
             ctx.restore();
         }
     }
     ctx.restore();
-    return true;
 }
 
 pub fn panic(message: []const u8, stack: ?*builtin.StackTrace) noreturn {

@@ -17,8 +17,8 @@ const Neighbour = struct { q: u8, r: u8, direction: Direction };
 fn Neighbours(size: u8, q: u8, r: u8) []Neighbour {
     var neighbours: [6]Neighbour = undefined;
     var next: usize = 0;
-    const sq = @ptrCast(*const i8, &q).*;
-    const sr = @ptrCast(*const i8, &r).*;
+    const sq = @bitCast(i8, q);
+    const sr = @bitCast(i8, r);
     if (validCoordinate(size, sq, sr - 1)) {
         neighbours[next] = .{ .q = q, .r = r - 1, .direction = Direction.plusQ };
         next += 1;
@@ -269,7 +269,7 @@ pub fn create(size: u8, seed: u64, cells: [][]Cell) !void {
             }
             const orientation = rng.random().enumValue(Orientation);
             const connection = normalizeConnection(solution[q][r]);
-            cell.* = .{ .q = @intCast(i8, q), .r = @intCast(i8, r), .orientation = .{ .value = orientation, .animate = RotationDirection.clockwise, .startTime = 0, .duration = 250 }, .connection = connection, .color = Color.none };
+            cell.* = .{ .q = @intCast(i8, q), .r = @intCast(i8, r), .orientation = .{ .value = orientation, .animate = RotationDirection.clockwise, .startTime = 0 }, .connection = connection, .color = Color.none };
         }
     }
 }
