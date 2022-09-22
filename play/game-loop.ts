@@ -6,15 +6,17 @@ export type Coordinate = {
 };
 
 type Milliseconds = number;
+type RotationDirection = "clockwise" | "counter-clockwise";
+type OrientationAnimation = {
+	value: Orientation;
+	animate: RotationDirection;
+	startTime: DOMHighResTimeStamp;
+	duration: Milliseconds;
+};
 type Cell = {
 	q: number;
 	r: number;
-	orientation: {
-		value: Orientation;
-		animate: "clockwise" | "counter-clockwise";
-		startTime: DOMHighResTimeStamp;
-		duration: Milliseconds;
-	};
+	orientation: OrientationAnimation;
 	connection: Connection;
 	color: Color;
 };

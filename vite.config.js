@@ -1,4 +1,5 @@
-import { resolve } from "path";
+import { resolve } from "node:path";
+import Zig from "./vite-plugin-zig";
 
 export default {
 	base: "/hexpanse/",
@@ -16,4 +17,10 @@ export default {
 			},
 		},
 	},
+	plugins: [
+		Zig({
+			enableWorkaround12864: false,
+			zigBin: "~/dev/tools/zig-0.10.0-dev.4060+61aaef0b0/zig",
+		}),
+	],
 };

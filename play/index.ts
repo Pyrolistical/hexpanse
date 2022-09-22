@@ -69,19 +69,10 @@ canvas.onpointerdown = (event) => {
 		position,
 		buttons: event.buttons,
 	});
-	const [x, y] = position;
-	for (const snapshot of Object.values(previousInteractibles)) {
-		ctx.save();
-		ctx.setTransform(snapshot.transform);
-		snapshot.interacted = ctx.isPointInPath(snapshot.path, x, y);
-		ctx.restore();
-	}
 	requestDraw();
 };
 
 type Position = [number, number];
-type Dimension = [number, number];
-type Memory = Record<string, any>;
 type LineCapStyle = "round";
 export type Context2D = {
 	save(): void;
@@ -105,102 +96,6 @@ export type Context2D = {
 
 	draw(): void;
 };
-type DrawCommand =
-	| Fill
-	| FillRect
-	| FillStyle
-	| Stroke
-	| StrokeStyle
-	| Save
-	| Restore
-	| Translate
-	| Scale
-	| Rotate
-	| LineWidth
-	| LineCap
-	| BeginPath
-	| MoveTo
-	| LineTo
-	| Interactible;
-
-type Fill = {
-	type: "fill";
-	path: Path2D | undefined;
-};
-type FillRect = {
-	type: "fill rect";
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-};
-type FillStyle = {
-	type: "fill style";
-	style: string;
-};
-type Stroke = {
-	type: "stroke";
-	path: Path2D | undefined;
-};
-type StrokeStyle = {
-	type: "stroke style";
-	style: string;
-};
-type Save = {
-	type: "save";
-};
-type Restore = {
-	type: "restore";
-};
-type Translate = {
-	type: "translate";
-	x: number;
-	y: number;
-};
-type Scale = {
-	type: "scale";
-	x: number;
-	y: number;
-};
-type Rotate = {
-	type: "rotate";
-	angle: number;
-};
-type LineWidth = {
-	type: "line width";
-	width: number;
-};
-type LineCap = {
-	type: "line cap";
-	style: LineCapStyle;
-};
-type BeginPath = {
-	type: "begin path";
-};
-type MoveTo = {
-	type: "move to";
-	x: number;
-	y: number;
-};
-type LineTo = {
-	type: "line to";
-	x: number;
-	y: number;
-};
-type Interactible = {
-	type: "interactible";
-	key: number;
-	path: Path2D;
-};
-
-export type GameLoop = (
-	memory: Memory
-) => (
-	ctx: Context2D,
-	time: DOMHighResTimeStamp,
-	[width, height]: Dimension,
-	events: Event[]
-) => void;
 
 type Event = PointerDown;
 export type PointerDown = {
@@ -209,130 +104,121 @@ export type PointerDown = {
 	buttons: PointerEvent["buttons"];
 };
 
-let renderQueue: DrawCommand[] = [];
-const context2D: Context2D = {
-	save() {
-		renderQueue.push({
-			type: "save",
-		});
+type LineCapIndex = 0 | 1 | 2;
+const LineCaps: CanvasLineCap[] = ["butt", "round", "square"];
+import gameLoopWasm from "../game-loop/index.zig";
+const module = await WebAssembly.compileStreaming(fetch(gameLoopWasm));
+let nextPathId = 0;
+const paths: Record<number, Path2D> = {};
+const instance = await WebAssembly.instantiate(module, {
+	env: {
+		throwError(pointer: number, length: number) {
+			const byteArray = new Uint8Array(memory.buffer);
+			const message = new TextDecoder().decode(
+				byteArray.slice(pointer, pointer + length)
+			);
+			throw new Error(message);
+		},
+		consoleLog(pointer: number, length: number) {
+			const byteArray = new Uint8Array(memory.buffer);
+			const message = new TextDecoder().decode(
+				byteArray.slice(pointer, pointer + length)
+			);
+			console.log(message);
+		},
 	},
-	restore() {
-		renderQueue.push({
-			type: "restore",
-		});
+	Path2D: {
+		new: () => {
+			const path = ++nextPathId;
+			paths[path] = new Path2D();
+			return path;
+		},
+		moveTo(path: number, x: number, y: number) {
+			paths[path]!.moveTo(x, y);
+		},
+		lineTo(path: number, x: number, y: number) {
+			paths[path]!.lineTo(x, y);
+		},
+		// workaround for https://github.com/ziglang/zig/issues/12880
+		m(path: number, x: number, y: number) {
+			paths[path]!.moveTo(x, y);
+		},
+		l(path: number, x: number, y: number) {
+			paths[path]!.lineTo(x, y);
+		},
+		closePath(path: number) {
+			paths[path]!.closePath();
+		},
 	},
-	set lineWidth(width: number) {
-		renderQueue.push({
-			type: "line width",
-			width,
-		});
-	},
-	set lineCap(style: "round") {
-		renderQueue.push({
-			type: "line cap",
-			style,
-		});
-	},
-	beginPath() {
-		renderQueue.push({
-			type: "begin path",
-		});
-	},
-	moveTo(x: number, y: number) {
-		renderQueue.push({
-			type: "move to",
-			x,
-			y,
-		});
-	},
-	lineTo(x: number, y: number) {
-		renderQueue.push({
-			type: "line to",
-			x,
-			y,
-		});
-	},
-	fill(path?: Path2D) {
-		renderQueue.push({
-			type: "fill",
-			path,
-		});
-	},
-	fillRect(x: number, y: number, width: number, height: number) {
-		renderQueue.push({
-			type: "fill rect",
-			x,
-			y,
-			width,
-			height,
-		});
-	},
-	set fillStyle(style: string) {
-		renderQueue.push({
-			type: "fill style",
-			style,
-		});
-	},
-	stroke(path?: Path2D) {
-		renderQueue.push({
-			type: "stroke",
-			path,
-		});
-	},
-	set strokeStyle(style: string) {
-		renderQueue.push({
-			type: "stroke style",
-			style,
-		});
-	},
-	translate(x: number, y: number) {
-		renderQueue.push({
-			type: "translate",
-			x,
-			y,
-		});
-	},
-	scale(x: number, y: number) {
-		renderQueue.push({
-			type: "scale",
-			x,
-			y,
-		});
-	},
-	rotate(angle: number) {
-		renderQueue.push({
-			type: "rotate",
-			angle,
-		});
-	},
+	ctx: {
+		save: ctx.save.bind(ctx),
+		restore: ctx.restore.bind(ctx),
 
-	interactible(key: number, path: Path2D) {
-		renderQueue.push({
-			type: "interactible",
-			key,
-			path,
-		});
-	},
-	interacted(key: number) {
-		return previousInteractibles[key]?.interacted ?? false;
-	},
+		translate(x: number, y: number) {
+			ctx.translate(x, y);
+		},
+		scale(x: number, y: number) {
+			ctx.scale(x, y);
+		},
+		rotate(angle: number) {
+			ctx.rotate(angle);
+		},
 
-	draw() {
-		requestDraw();
+		beginPath() {
+			ctx.beginPath();
+		},
+		moveTo(x: number, y: number) {
+			ctx.moveTo(x, y);
+		},
+		lineTo(x: number, y: number) {
+			ctx.lineTo(x, y);
+		},
+
+		fillStyle(rgb: number) {
+			ctx.fillStyle = `#${rgb.toString(16).padStart(6, "0")}`;
+		},
+		fillRect(x: number, y: number, width: number, height: number) {
+			ctx.fillRect(x, y, width, height);
+		},
+		fill() {
+			ctx.fill();
+		},
+		fillPath(path: number) {
+			ctx.fill(paths[path]!);
+		},
+
+		lineWidth(width: number) {
+			ctx.lineWidth = width;
+		},
+		lineCap(index: LineCapIndex) {
+			ctx.lineCap = LineCaps[index]!;
+		},
+		strokeStyle(rgb: number) {
+			ctx.strokeStyle = `#${rgb.toString(16).padStart(6, "0")}`;
+		},
+		stroke() {
+			ctx.stroke();
+		},
+		strokePath(path: number) {
+			ctx.stroke(paths[path]!);
+		},
+
+		interactible(key: number, path: number) {},
+
+		interacted(key: number) {
+			return false;
+		},
 	},
-};
-import GameLoop from "./game-loop";
-const gameLoop = GameLoop({});
+});
+type GameLoop = (time: number, width: number, height: number) => GameLoopResult;
+const memory = instance.exports["memory"]! as WebAssembly.Memory;
+const gameLoop = instance.exports["gameLoop"]! as GameLoop;
 let raf: number | undefined;
 const events: Event[] = [];
-type InteractibleSnapshot = {
-	transform: DOMMatrix;
-	path: Path2D;
-	interacted: boolean;
-};
-let previousInteractibles: Record<number, InteractibleSnapshot> = {};
-let currentInteractibles: Record<number, InteractibleSnapshot> = {};
 
+type Idle = 0;
+type Draw = 1;
+type GameLoopResult = Idle | Draw;
 const requestDraw = () => {
 	if (raf) {
 		return;
@@ -340,80 +226,11 @@ const requestDraw = () => {
 	raf = requestAnimationFrame((time) => {
 		raf = undefined;
 		const { width, height } = canvas;
-		gameLoop(context2D, time, [width, height], events);
-		for (const drawCommand of renderQueue) {
-			switch (drawCommand.type) {
-				case "save":
-					ctx.save();
-					break;
-				case "restore":
-					ctx.restore();
-					break;
-				case "line width":
-					ctx.lineWidth = drawCommand.width;
-					break;
-				case "line cap":
-					ctx.lineCap = drawCommand.style;
-					break;
-				case "begin path":
-					ctx.beginPath();
-					break;
-				case "move to":
-					ctx.moveTo(drawCommand.x, drawCommand.y);
-					break;
-				case "line to":
-					ctx.lineTo(drawCommand.x, drawCommand.y);
-					break;
-				case "fill":
-					if (drawCommand.path) {
-						ctx.fill(drawCommand.path);
-					} else {
-						ctx.fill();
-					}
-					break;
-				case "fill rect":
-					ctx.fillRect(
-						drawCommand.x,
-						drawCommand.y,
-						drawCommand.width,
-						drawCommand.height
-					);
-					break;
-				case "fill style":
-					ctx.fillStyle = drawCommand.style;
-					break;
-				case "stroke":
-					if (drawCommand.path) {
-						ctx.stroke(drawCommand.path);
-					} else {
-						ctx.stroke();
-					}
-					break;
-				case "stroke style":
-					ctx.strokeStyle = drawCommand.style;
-					break;
-				case "translate":
-					ctx.translate(drawCommand.x, drawCommand.y);
-					break;
-				case "scale":
-					ctx.scale(drawCommand.x, drawCommand.y);
-					break;
-				case "rotate":
-					ctx.rotate(drawCommand.angle);
-					break;
-
-				case "interactible":
-					currentInteractibles[drawCommand.key] = {
-						transform: ctx.getTransform(),
-						path: drawCommand.path,
-						interacted: false,
-					};
-			}
+		const result = gameLoop(time, width, height);
+		if (result === 1) {
+			requestDraw();
 		}
-		previousInteractibles = currentInteractibles;
-		currentInteractibles = {};
 
-		renderQueue.length = 0;
 		events.length = 0;
 	});
 };

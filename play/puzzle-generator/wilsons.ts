@@ -172,9 +172,9 @@ export default ({ size, seed }: Config): Cell[] => {
 			if (q + r < size || q + r > 3 * size) {
 				continue;
 			}
-			const denormalConnection = solution[q]![r]!;
 			const randomOrientationIndex = Math.floor(random() * Orientations.length);
 			const orientation = Orientations[randomOrientationIndex]!;
+			const denormalConnection = solution[q]![r]!;
 			const connection = normalizeConnection(denormalConnection);
 			cells.push({
 				q,
