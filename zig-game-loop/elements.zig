@@ -26,7 +26,7 @@ pub fn init() void {
     hexagon = createHexagon();
 }
 
-pub fn createHexagon() u32 {
+fn createHexagon() u32 {
     const path = Path2D.new();
     // workaround for https://github.com/ziglang/zig/issues/12880
     // Path2D.moveTo(path, 0, -1);
@@ -47,19 +47,19 @@ pub fn createHexagon() u32 {
 
 pub fn background(width: f64, height: f64) void {
     ctx.save();
+    defer ctx.restore();
     ctx.fillStyle(backgroundColor);
     ctx.fillRect(0, 0, width, height);
-    ctx.restore();
 }
 
 fn cellBackground() void { //size: u8, q: u8, r: u8) void {
     ctx.save();
+    defer ctx.restore();
     ctx.scale(0.855, 0.855);
     ctx.fillStyle(cellBackgroundColor);
     ctx.fillPath(hexagon);
     // const interactionKey = (2 * size + 1) * q + r;
     // ctx.interactible(interactionKey, hexagon);
-    ctx.restore();
     // return ctx.interacted(interactionKey);
 }
 
@@ -77,6 +77,7 @@ pub fn cellBackgroundAndEdges(size: i8, cell: Cell) void {
     cellBackground(); //size, q, r);
 
     ctx.save();
+    defer ctx.restore();
     const t = 1; //easing(math.min((time - orientation.startTime) / 250, 1));
     const startAngle = @intToFloat(f64, if (orientation.animate == RotationDirection.clockwise)
         @enumToInt(orientation.value) - 60
@@ -98,28 +99,30 @@ pub fn cellBackgroundAndEdges(size: i8, cell: Cell) void {
     ctx.fillStyle(rgb);
     ctx.strokeStyle(rgb);
     edges(connection);
-    ctx.restore();
 }
 
 fn edges(connection: Connection) void {
     switch (connection) {
         .i => {
-            ctx.save();
-            ctx.lineWidth(0.25);
-            ctx.lineCap(LineCap.round);
-            ctx.beginPath();
-            ctx.moveTo(0.0, 0.0);
-            ctx.lineTo(hexagonUnitHeight, 0);
-            ctx.stroke();
-            ctx.restore();
+            {
+                ctx.save();
+                defer ctx.restore();
+                ctx.lineWidth(0.25);
+                ctx.lineCap(LineCap.round);
+                ctx.beginPath();
+                ctx.moveTo(0.0, 0.0);
+                ctx.lineTo(hexagonUnitHeight, 0);
+                ctx.stroke();
+            }
 
             ctx.save();
+            defer ctx.restore();
             ctx.scale(0.25, 0.25);
             ctx.fillPath(hexagon);
-            ctx.restore();
         },
         .v => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -131,10 +134,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .C => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -146,20 +149,20 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .l => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
             ctx.moveTo(-hexagonUnitHeight, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .E => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -176,10 +179,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .y => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -191,10 +194,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .lambda => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -206,10 +209,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .tri => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -226,10 +229,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .K => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -246,10 +249,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .phi => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -266,10 +269,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .X => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -281,10 +284,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(-hexagonUnitHeight, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .hat => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -301,10 +304,10 @@ fn edges(connection: Connection) void {
             ctx.moveTo(0, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
         .star => {
             ctx.save();
+            defer ctx.restore();
             ctx.lineWidth(0.25);
             ctx.lineCap(LineCap.round);
             ctx.beginPath();
@@ -321,7 +324,6 @@ fn edges(connection: Connection) void {
             ctx.moveTo(-hexagonUnitHeight, 0);
             ctx.lineTo(hexagonUnitHeight, 0);
             ctx.stroke();
-            ctx.restore();
         },
     }
 }

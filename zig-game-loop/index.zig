@@ -79,6 +79,7 @@ fn maybeGameLoop() !void {
     elements.background(width, height);
 
     ctx.save();
+    defer ctx.restore();
     ctx.translate(width / 2, height / 2);
     const horizontalScale =
         width / (hexagonUnitHeight * 2 * (2 * @intToFloat(f64, size) + 1));
@@ -91,22 +92,19 @@ fn maybeGameLoop() !void {
             if (q + r < size or q + r > 3 * size) {
                 continue;
             }
-            {
-                // Q basis [Math.sqrt(3), 0]
-                // R basis [Math.sqrt(3) / 2, 3 / 2]
-                // [x, y] = Q basis * q + R basis * r
-                const x =
-                    2 * hexagonUnitHeight * @intToFloat(f64, @intCast(i8, q) - size) +
-                    hexagonUnitHeight * @intToFloat(f64, @intCast(i8, r) - size);
-                const y = (3.0 / 2.0) * @intToFloat(f64, @intCast(i8, r) - size);
-                ctx.save();
-                ctx.translate(x, y);
-            }
+            // Q basis [Math.sqrt(3), 0]
+            // R basis [Math.sqrt(3) / 2, 3 / 2]
+            // [x, y] = Q basis * q + R basis * r
+            const x =
+                2 * hexagonUnitHeight * @intToFloat(f64, @intCast(i8, q) - size) +
+                hexagonUnitHeight * @intToFloat(f64, @intCast(i8, r) - size);
+            const y = (3.0 / 2.0) * @intToFloat(f64, @intCast(i8, r) - size);
+            ctx.save();
+            defer ctx.restore();
+            ctx.translate(x, y);
             elements.cellBackgroundAndEdges(size, cell);
-            ctx.restore();
         }
     }
-    ctx.restore();
 }
 
 pub fn panic(message: []const u8, stack: ?*builtin.StackTrace) noreturn {
