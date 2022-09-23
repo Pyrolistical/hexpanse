@@ -60,17 +60,12 @@ export const cellBackgroundAndEdges = (
 	const t = easing(
 		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
 	);
-	ctx.rotate(
-		(lerp(
-			t,
-			orientation.animate === "clockwise"
-				? orientation.value - 60
-				: orientation.value + 60,
-			orientation.value
-		) *
-			Math.PI) /
-			180
-	);
+	const startAngle =
+		orientation.animate === "clockwise"
+			? orientation.value - 60
+			: orientation.value + 60;
+	const endAngle = orientation.value;
+	ctx.rotate((lerp(t, startAngle, endAngle) * Math.PI) / 180);
 	if (t < 1) {
 		frame.next();
 	}

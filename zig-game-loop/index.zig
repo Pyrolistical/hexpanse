@@ -78,6 +78,7 @@ fn maybeGameLoop() !void {
 
     elements.background(width, height);
 
+    ctx.save();
     ctx.translate(width / 2, height / 2);
     const horizontalScale =
         width / (hexagonUnitHeight * 2 * (2 * @intToFloat(f64, size) + 1));
