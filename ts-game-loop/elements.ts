@@ -43,7 +43,7 @@ export const cellBackground = (
 	ctx.fillStyle = cellBackgroundColor;
 	ctx.fill(hexagon);
 	let clicked = false;
-	if (frame.time() === mouse?.timestamp && mouse?.buttons?.primary?.pressed) {
+	if (frame.time === mouse?.timestamp && mouse?.buttons?.primary?.pressed) {
 		const [x, y] = mouse.position;
 		clicked = ctx.isPointInPath(hexagon, x, y);
 	}
@@ -67,7 +67,7 @@ export const cellBackgroundAndEdges = (
 
 	ctx.save();
 	const t = easing(
-		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
+		Math.min((frame.time - orientation.startTime) / orientation.duration, 1)
 	);
 	const startAngle =
 		orientation.animate === "clockwise"
@@ -108,7 +108,7 @@ export const gameOverCell = (
 
 	ctx.save();
 	const t = easing(
-		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
+		Math.min((frame.time - orientation.startTime) / orientation.duration, 1)
 	);
 	ctx.rotate(
 		(lerp(

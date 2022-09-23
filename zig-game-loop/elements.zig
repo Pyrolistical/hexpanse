@@ -52,15 +52,12 @@ pub fn background(width: f64, height: f64) void {
     ctx.fillRect(0, 0, width, height);
 }
 
-fn cellBackground() void { //size: u8, q: u8, r: u8) void {
+fn cellBackground() void {
     ctx.save();
     defer ctx.restore();
     ctx.scale(0.855, 0.855);
     ctx.fillStyle(cellBackgroundColor);
     ctx.fillPath(hexagon);
-    // const interactionKey = (2 * size + 1) * q + r;
-    // ctx.interactible(interactionKey, hexagon);
-    // return ctx.interacted(interactionKey);
 }
 
 fn lerp(t: f64, a: f64, b: f64) f64 {

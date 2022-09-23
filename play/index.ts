@@ -89,26 +89,15 @@ const frame = {
 	time: 0,
 	width: 0,
 	height: 0,
-	draw: false,
-};
-export type Frame = {
-	time(): DOMHighResTimeStamp;
-	width(): number;
-	height(): number;
-	next(): void;
-};
-const frameView: Frame = {
-	time() {
-		return frame.time;
-	},
-	width() {
-		return frame.width;
-	},
-	height() {
-		return frame.height;
-	},
 	next() {},
 };
+export type Frame = {
+	time: DOMHighResTimeStamp;
+	width: number;
+	height: number;
+	next(): void;
+};
+
 type Button = {
 	pressed: boolean;
 };
@@ -135,7 +124,7 @@ const mouse: Mouse = {
 
 import GameLoop from "../zig-game-loop/index";
 // import GameLoop from "../ts-game-loop/index";
-const gameLoop = await GameLoop(ctx, frameView, mouse);
+const gameLoop = await GameLoop(ctx, frame, mouse);
 
 let raf: number | undefined;
 
@@ -153,4 +142,4 @@ const requestDraw = () => {
 		gameLoop();
 	});
 };
-frameView.next = requestDraw;
+frame.next = requestDraw;

@@ -77,8 +77,7 @@ export default async (
 	let cells: QR<Cell>;
 	let facingNeighboursByCoordinate: FacingNeighboursByCoordinate;
 	return () => {
-		const width = frame.width();
-		const height = frame.height();
+		const { width, height } = frame;
 		elements.background(ctx, width, height);
 
 		const size = 1;
@@ -153,7 +152,7 @@ export default async (
 							cell.orientation.value += 60;
 							cell.orientation.value %= 360;
 							cell.orientation.animate = "clockwise";
-							cell.orientation.startTime = frame.time();
+							cell.orientation.startTime = frame.time;
 
 							delete facingNeighboursByCoordinate[q]?.[r];
 							if (facingNeighboursByCoordinate[q]?.length === 0) {
@@ -189,7 +188,7 @@ export default async (
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				const t = (Math.cos(Math.PI * (frame.time() / 2000)) + 1) / 2;
+				const t = (Math.cos(Math.PI * (frame.time / 2000)) + 1) / 2;
 				const l = Math.round(lerp(t, 50, 100));
 				for (let q = 0; q <= 2 * size; q++) {
 					for (let r = 0; r <= 2 * size; r++) {

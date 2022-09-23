@@ -44,7 +44,20 @@ export default (module: WebAssembly.Module) =>
 					return mouse.timestamp;
 				},
 			},
-			frame,
+			frame: {
+				time() {
+					return frame.time;
+				},
+				width() {
+					return frame.width;
+				},
+				height() {
+					return frame.height;
+				},
+				next() {
+					frame.next();
+				},
+			},
 			Path2D: {
 				new: () => {
 					const path = ++nextPathId;
