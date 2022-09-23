@@ -110,16 +110,13 @@ const frameView: Frame = {
 	next() {},
 };
 
-import GameLoop from "../zig-game-loop/index";
-// import GameLoop from "../ts-game-loop/index";
+// import GameLoop from "../zig-game-loop/index";
+import GameLoop from "../ts-game-loop/index";
 const gameLoop = await GameLoop(ctx, frameView);
 
 let raf: number | undefined;
 const events: Event[] = [];
 
-let count = -100;
-const samples = 100;
-let total: number = 0;
 const requestDraw = () => {
 	if (raf) {
 		return;
@@ -128,16 +125,7 @@ const requestDraw = () => {
 		frame.time = time;
 		raf = undefined;
 
-		const start = performance.now();
 		gameLoop();
-		if (count++ < samples) {
-			if (count > 0) {
-				total += performance.now() - start;
-			}
-			requestDraw();
-		} else {
-			console.log(`average ${total / samples} ms`);
-		}
 
 		events.length = 0;
 	});

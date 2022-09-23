@@ -1,4 +1,8 @@
+import type { GameLoop, Frame } from "../play/index";
+
 import PuzzleGenerator from "./puzzle-generator";
+import * as elements from "./elements";
+const hexagonUnitHeight = elements.hexagonUnitHeight;
 
 export type Coordinate = {
 	q: number;
@@ -13,7 +17,7 @@ type OrientationAnimation = {
 	startTime: DOMHighResTimeStamp;
 	duration: Milliseconds;
 };
-type Cell = {
+export type Cell = {
 	q: number;
 	r: number;
 	orientation: OrientationAnimation;
@@ -52,352 +56,6 @@ export type Connection = typeof Connections[number];
 
 const Colors = ["none", "red", "green", "blue"] as const;
 export type Color = typeof Colors[number];
-
-const lerp = (t: number, a: number, b: number): number => {
-	return (1 - t) * a + t * b;
-};
-
-const drawCellBackground = (ctx: CanvasRenderingContext2D): boolean => {
-	ctx.save();
-	ctx.scale(0.855, 0.855);
-	ctx.fill(hexagon);
-	const clicked = false; //ctx.isPointInPath(hexagon, x, y);
-	ctx.restore();
-	return clicked;
-};
-
-import BezierEasing from "bezier-easing";
-const easing = BezierEasing(0.25, 0.1, 0.25, 1);
-const drawCell = (
-	frame: Frame,
-	ctx: CanvasRenderingContext2D,
-	{ orientation, connection, color }: Cell
-): boolean => {
-	const clicked = drawCellBackground(ctx);
-
-	ctx.save();
-	const t = easing(
-		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
-	);
-	ctx.rotate(
-		(lerp(
-			t,
-			orientation.animate === "clockwise"
-				? orientation.value - 60
-				: orientation.value + 60,
-			orientation.value
-		) *
-			Math.PI) /
-			180
-	);
-	if (t < 1) {
-		frame.next();
-	}
-	switch (color) {
-		case "none":
-			ctx.fillStyle = ctx.strokeStyle = cellForeground;
-			break;
-		case "red":
-			ctx.fillStyle = ctx.strokeStyle = red;
-			break;
-		case "green":
-			ctx.fillStyle = ctx.strokeStyle = green;
-			break;
-		case "blue":
-			ctx.fillStyle = ctx.strokeStyle = blue;
-			break;
-	}
-	drawEdges(ctx, connection);
-	ctx.restore();
-
-	return clicked;
-};
-
-const drawGameOverCell = (
-	frame: Frame,
-	ctx: CanvasRenderingContext2D,
-	{ orientation, connection }: Cell,
-	l: number
-) => {
-	drawCellBackground(ctx);
-
-	ctx.save();
-	const t = easing(
-		Math.min((frame.time() - orientation.startTime) / orientation.duration, 1)
-	);
-	ctx.rotate(
-		(lerp(
-			t,
-			orientation.animate === "clockwise"
-				? orientation.value - 60
-				: orientation.value + 60,
-			orientation.value
-		) *
-			Math.PI) /
-			180
-	);
-	if (t < 1) {
-		frame.next();
-	}
-	ctx.fillStyle = ctx.strokeStyle = `hsl(51deg 100% ${l}%)`;
-	drawEdges(ctx, connection);
-	ctx.restore();
-};
-
-const drawEdges = (ctx: CanvasRenderingContext2D, connection: Connection) => {
-	switch (connection) {
-		case 0b100000: // i
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-
-			ctx.save();
-			ctx.scale(0.25, 0.25);
-			ctx.fill(hexagon);
-			ctx.restore();
-			break;
-		case 0b110000: // v
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b101000: // C
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((120 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b100100: // l
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b111000: // E
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b101100: // y
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((120 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b110100: // λ
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b101010: // tri
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((120 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((120 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b111100: // K
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b101110: // Ψ
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((120 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((120 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b110110: // X
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b111110: // hat
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(0, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-		case 0b111111: // star
-			ctx.save();
-			ctx.lineWidth = 0.25;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.rotate((60 * Math.PI) / 180);
-			ctx.moveTo(-hexagonUnitHeight, 0);
-			ctx.lineTo(hexagonUnitHeight, 0);
-			ctx.stroke();
-			ctx.restore();
-			break;
-	}
-};
-
-const base03 = "#002b36";
-const base02 = "#073642";
-// const base01 = "#586e75";
-// const base00 = "#657b83";
-const base0 = "#839496";
-// const base1 = "#93a1a1";
-// const base2 = "#eee8d5";
-// const base3 = "#fdf6e3";
-// const yellow = "#b58900";
-// const orange = "#cb4b16";
-const red = "#dc322f";
-// const magenta = "#d33682";
-// const violet = "#6c71c4";
-const blue = "#268bd2";
-// const cyan = "#2aa198";
-const green = "#859900";
-const background = base03;
-const cellBackground = base02;
-const cellForeground = base0;
-const hexagonUnitHeight = Math.sqrt(3) / 2;
-const hexagon = new Path2D(`
-  m ${-hexagonUnitHeight} -0.5
-  l  ${hexagonUnitHeight} -0.5
-  l  ${hexagonUnitHeight}  0.5
-  l                     0    1
-  l ${-hexagonUnitHeight}  0.5
-  l ${-hexagonUnitHeight} -0.5
-  z
-`);
 
 const mostCommonColor = (
 	size: number,
@@ -701,7 +359,9 @@ const updateFacingNeighbours = (
 	}
 };
 
-import type { GameLoop, Frame } from "../play/index";
+const lerp = (t: number, a: number, b: number): number => {
+	return (1 - t) * a + t * b;
+};
 
 export default async (
 	ctx: CanvasRenderingContext2D,
@@ -713,10 +373,9 @@ export default async (
 	return () => {
 		const width = frame.width();
 		const height = frame.height();
-		ctx.fillStyle = background;
-		ctx.fillRect(0, 0, width, height);
+		elements.background(ctx, width, height);
 
-		const size = 13;
+		const size = 1;
 		if (state === "boot") {
 			cells = [];
 			const config = {
@@ -755,8 +414,8 @@ export default async (
 					);
 				}
 			}
-			// const spans = calculateSpans(size, facingNeighboursByCoordinate);
-			// updateColors(size, cells, spans);
+			const spans = calculateSpans(size, facingNeighboursByCoordinate);
+			updateColors(size, cells, spans);
 		}
 
 		switch (state) {
@@ -768,7 +427,6 @@ export default async (
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				ctx.fillStyle = cellBackground;
 				for (let q = 0; q <= 2 * size; q++) {
 					for (let r = 0; r <= 2 * size; r++) {
 						if (q + r < size || q + r > 3 * size) {
@@ -785,7 +443,7 @@ export default async (
 						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						if (drawCell(frame, ctx, cell)) {
+						if (elements.cellBackgroundAndEdges(frame, ctx, cell)) {
 							cell.orientation.value += 60;
 							cell.orientation.value %= 360;
 							cell.orientation.animate = "clockwise";
@@ -825,7 +483,6 @@ export default async (
 				const verticalScale = height / (2 * (2 * size * 0.75 + 1));
 				const scale = Math.min(horizontalScale, verticalScale);
 				ctx.scale(scale, scale);
-				ctx.fillStyle = cellBackground;
 				const t = (Math.cos(Math.PI * (frame.time() / 2000)) + 1) / 2;
 				const l = Math.round(lerp(t, 50, 100));
 				for (let q = 0; q <= 2 * size; q++) {
@@ -844,7 +501,7 @@ export default async (
 						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						drawGameOverCell(frame, ctx, cell, l);
+						elements.gameOverCell(frame, ctx, cell, l);
 						ctx.restore();
 					}
 				}

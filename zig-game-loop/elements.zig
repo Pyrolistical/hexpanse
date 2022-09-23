@@ -49,6 +49,7 @@ pub fn background(width: f64, height: f64) void {
     ctx.save();
     ctx.fillStyle(backgroundColor);
     ctx.fillRect(0, 0, width, height);
+    ctx.restore();
 }
 
 fn cellBackground() void { //size: u8, q: u8, r: u8) void {
