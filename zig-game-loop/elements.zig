@@ -74,32 +74,26 @@ fn lerp(t: f64, a: f64, b: f64) f64 {
     return (1 - t) * a + t * b;
 }
 
-pub fn cellBackgroundAndEdges(size: i8, cell: Cell) void {
+const rotationAmount: f64 = 60.0;
+pub fn cellBackgroundAndEdges(size: i8, cell: Cell) bool {
     _ = size;
-    // const q = cell.q;
-    // const r = cell.r;
     const orientation = cell.orientation;
     const connection = cell.connection;
     var color = cell.color;
-    const clicked = cellBackground(); //size, q, r);
-    if (clicked) {
-        color = Color.red;
-    }
+    const clicked = cellBackground();
 
     ctx.save();
     defer ctx.restore();
-    const t = 1; //easing(math.min((time - orientation.startTime) / 250, 1));
-    const startAngle = @intToFloat(f64, if (orientation.animate == RotationDirection.clockwise)
-        @enumToInt(orientation.value) - 60
-    else
-        @enumToInt(orientation.value) + 60);
+    const t = lerp(math.min((frame.time() - orientation.startTime) / 250, 1), 0, 1);
+    const startAngle =
+        @intToFloat(f64, @enumToInt(orientation.value)) + if (orientation.animate == RotationDirection.clockwise) -rotationAmount else rotationAmount;
     const endAngle = @intToFloat(f64, @enumToInt(orientation.value));
     ctx.rotate(lerp(t, startAngle, endAngle) *
         math.pi /
         180);
-    // if (t < 1) {
-    //     ctx.draw();
-    // }
+    if (t < 1) {
+        frame.next();
+    }
     const rgb: u32 = switch (color) {
         .none => cellForegroundColor,
         .red => red,
@@ -109,6 +103,8 @@ pub fn cellBackgroundAndEdges(size: i8, cell: Cell) void {
     ctx.fillStyle(rgb);
     ctx.strokeStyle(rgb);
     edges(connection);
+
+    return clicked;
 }
 
 fn edges(connection: Connection) void {

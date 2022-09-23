@@ -14,7 +14,7 @@ const Milliseconds = f32;
 
 pub const RotationDirection = enum { clockwise, counterClockwise };
 
-pub const Orientation = enum(i16) {
+pub const Orientation = enum(u16) {
     rotate0 = 0,
     rotate60 = 60,
     rotate120 = 120,
@@ -87,8 +87,8 @@ fn maybeGameLoop() !void {
     const scale = math.min(horizontalScale, verticalScale);
     ctx.scale(scale, scale);
 
-    for (cells) |row, q| {
-        for (row) |cell, r| {
+    for (cells) |*row, q| {
+        for (row.*) |*cell, r| {
             if (q + r < size or q + r > 3 * size) {
                 continue;
             }
@@ -102,7 +102,15 @@ fn maybeGameLoop() !void {
             ctx.save();
             defer ctx.restore();
             ctx.translate(x, y);
-            elements.cellBackgroundAndEdges(size, cell);
+            if (elements.cellBackgroundAndEdges(size, cell.*)) {
+                cell.*.orientation.value = nextOrientation: {
+                    var nextOrientation: u16 = @enumToInt(cell.orientation.value) + 60;
+                    nextOrientation %= 360;
+                    break :nextOrientation @intToEnum(Orientation, nextOrientation);
+                };
+                cell.*.orientation.animate = RotationDirection.clockwise;
+                cell.*.orientation.startTime = frame.time();
+            }
         }
     }
 }
