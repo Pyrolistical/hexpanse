@@ -1,4 +1,4 @@
-import type { GameLoop, Frame } from "../play/index";
+import type { GameLoop, Frame, Mouse } from "../play/index";
 
 import PuzzleGenerator from "./puzzle-generator";
 import * as elements from "./elements";
@@ -70,7 +70,8 @@ const lerp = (t: number, a: number, b: number): number => {
 
 export default async (
 	ctx: CanvasRenderingContext2D,
-	frame: Frame
+	frame: Frame,
+	mouse: Mouse
 ): Promise<GameLoop> => {
 	let state: "boot" | "playing" | "game over" = "boot";
 	let cells: QR<Cell>;
@@ -148,7 +149,7 @@ export default async (
 						const y = (3 / 2) * (cellR - size);
 						ctx.save();
 						ctx.translate(x, y);
-						if (elements.cellBackgroundAndEdges(frame, ctx, cell)) {
+						if (elements.cellBackgroundAndEdges(frame, ctx, cell, mouse)) {
 							cell.orientation.value += 60;
 							cell.orientation.value %= 360;
 							cell.orientation.animate = "clockwise";

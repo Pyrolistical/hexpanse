@@ -66,22 +66,22 @@ const pointerToCanvasSpace = ({ clientX, clientY }: PointerEvent): Position => {
 
 canvas.onpointerdown = (event) => {
 	const position = pointerToCanvasSpace(event);
-	events.push({
-		type: "pointerdown",
-		position,
-		buttons: event.buttons,
-	});
+	mouse.buttons.primary.pressed = Boolean(event.buttons & 1);
+	mouse.buttons.secondary.pressed = Boolean(event.buttons & 2);
+	mouse.position = position;
+	mouse.timestamp = Infinity;
+	requestDraw();
+};
+canvas.onpointerup = (event) => {
+	const position = pointerToCanvasSpace(event);
+	mouse.buttons.primary.pressed = false;
+	mouse.buttons.secondary.pressed = false;
+	mouse.position = position;
+	mouse.timestamp = Infinity;
 	requestDraw();
 };
 
 type Position = [number, number];
-
-type Event = PointerDown;
-export type PointerDown = {
-	type: "pointerdown";
-	position: Position;
-	buttons: PointerEvent["buttons"];
-};
 
 export type GameLoop = () => void;
 
@@ -109,25 +109,48 @@ const frameView: Frame = {
 	},
 	next() {},
 };
+type Button = {
+	pressed: boolean;
+};
+export type Mouse = {
+	buttons: {
+		primary: Button;
+		secondary: Button;
+	};
+	position: Position;
+	timestamp: number;
+};
+const mouse: Mouse = {
+	buttons: {
+		primary: {
+			pressed: false,
+		},
+		secondary: {
+			pressed: false,
+		},
+	},
+	position: [0, 0],
+	timestamp: 0,
+};
 
 // import GameLoop from "../zig-game-loop/index";
 import GameLoop from "../ts-game-loop/index";
-const gameLoop = await GameLoop(ctx, frameView);
+const gameLoop = await GameLoop(ctx, frameView, mouse);
 
 let raf: number | undefined;
-const events: Event[] = [];
 
 const requestDraw = () => {
 	if (raf) {
 		return;
 	}
 	raf = requestAnimationFrame((time) => {
+		if (mouse.timestamp === Infinity) {
+			mouse.timestamp = time;
+		}
 		frame.time = time;
 		raf = undefined;
 
 		gameLoop();
-
-		events.length = 0;
 	});
 };
 frameView.next = requestDraw;

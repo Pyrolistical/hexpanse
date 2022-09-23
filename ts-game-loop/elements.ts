@@ -1,4 +1,4 @@
-import { Frame } from "../play/index";
+import { Frame, Mouse } from "../play/index";
 import { Cell, Connection } from "./index";
 
 const base03 = "#002b36";
@@ -33,12 +33,20 @@ export const background = (
 	ctx.restore();
 };
 
-export const cellBackground = (ctx: CanvasRenderingContext2D): boolean => {
+export const cellBackground = (
+	frame: Frame,
+	ctx: CanvasRenderingContext2D,
+	mouse?: Mouse
+): boolean => {
 	ctx.save();
 	ctx.scale(0.855, 0.855);
 	ctx.fillStyle = cellBackgroundColor;
 	ctx.fill(hexagon);
-	const clicked = false; //ctx.isPointInPath(hexagon, x, y);
+	let clicked = false;
+	if (frame.time() === mouse?.timestamp && mouse?.buttons?.primary?.pressed) {
+		const [x, y] = mouse.position;
+		clicked = ctx.isPointInPath(hexagon, x, y);
+	}
 	ctx.restore();
 	return clicked;
 };
@@ -52,9 +60,10 @@ const easing = BezierEasing(0.25, 0.1, 0.25, 1);
 export const cellBackgroundAndEdges = (
 	frame: Frame,
 	ctx: CanvasRenderingContext2D,
-	{ orientation, connection, color }: Cell
+	{ orientation, connection, color }: Cell,
+	mouse: Mouse
 ): boolean => {
-	const clicked = cellBackground(ctx);
+	const clicked = cellBackground(frame, ctx, mouse);
 
 	ctx.save();
 	const t = easing(
@@ -95,7 +104,7 @@ export const gameOverCell = (
 	{ orientation, connection }: Cell,
 	l: number
 ) => {
-	cellBackground(ctx);
+	cellBackground(frame, ctx);
 
 	ctx.save();
 	const t = easing(
