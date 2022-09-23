@@ -62,7 +62,7 @@ export fn gameLoop() void {
 }
 
 fn maybeGameLoop() !void {
-    const size: u8 = 13;
+    const size: u8 = 1;
     const seed: u64 = 42;
     if (state == State.loading) {
         elements.init();

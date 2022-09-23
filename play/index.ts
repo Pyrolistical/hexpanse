@@ -133,8 +133,8 @@ const mouse: Mouse = {
 	timestamp: 0,
 };
 
-// import GameLoop from "../zig-game-loop/index";
-import GameLoop from "../ts-game-loop/index";
+import GameLoop from "../zig-game-loop/index";
+// import GameLoop from "../ts-game-loop/index";
 const gameLoop = await GameLoop(ctx, frameView, mouse);
 
 let raf: number | undefined;
