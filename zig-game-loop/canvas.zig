@@ -25,5 +25,4 @@ pub extern "ctx" fn strokeStyle(rgb: u32) void;
 pub extern "ctx" fn stroke() void;
 pub extern "ctx" fn strokePath(path: u32) void;
 
-pub extern "ctx" fn interactible(key: u32, path: u32) void;
-pub extern "ctx" fn interacted(key: u32) bool;
+pub extern "ctx" fn isPointInPath(path: u32, x: f64, y: f64) bool;

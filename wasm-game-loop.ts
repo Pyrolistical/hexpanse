@@ -43,6 +43,9 @@ export default (module: WebAssembly.Module) =>
 				timestamp() {
 					return mouse.timestamp;
 				},
+				buttons() {
+					return mouse.buttons;
+				},
 			},
 			frame: {
 				time() {
@@ -132,6 +135,10 @@ export default (module: WebAssembly.Module) =>
 				},
 				strokePath(path: number) {
 					ctx.stroke(paths[path]!);
+				},
+
+				isPointInPath(path: number, x: number, y: number) {
+					return ctx.isPointInPath(paths[path]!, x, y);
 				},
 			},
 		});

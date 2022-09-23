@@ -1,13 +1,16 @@
 const math = @import("std").math;
 
+const frame = @import("frame.zig");
 const ctx = @import("canvas.zig");
 const LineCap = ctx.LineCap;
 const Path2D = @import("path2d.zig");
+const mouse = @import("mouse.zig");
 
 const index = @import("index.zig");
 const Cell = index.Cell;
 const Connection = index.Connection;
 const RotationDirection = index.RotationDirection;
+const Color = index.Color;
 
 var hexagon: u32 = 0;
 pub const hexagonUnitHeight: f64 = math.sqrt(3.0) / 2.0;
@@ -52,12 +55,19 @@ pub fn background(width: f64, height: f64) void {
     ctx.fillRect(0, 0, width, height);
 }
 
-fn cellBackground() void {
+fn cellBackground() bool {
     ctx.save();
     defer ctx.restore();
     ctx.scale(0.855, 0.855);
     ctx.fillStyle(cellBackgroundColor);
     ctx.fillPath(hexagon);
+    var clicked = false;
+    if (frame.time() == mouse.timestamp() and mouse.primary()) {
+        const x = mouse.positionX();
+        const y = mouse.positionY();
+        clicked = ctx.isPointInPath(hexagon, x, y);
+    }
+    return clicked;
 }
 
 fn lerp(t: f64, a: f64, b: f64) f64 {
@@ -70,8 +80,11 @@ pub fn cellBackgroundAndEdges(size: i8, cell: Cell) void {
     // const r = cell.r;
     const orientation = cell.orientation;
     const connection = cell.connection;
-    const color = cell.color;
-    cellBackground(); //size, q, r);
+    var color = cell.color;
+    const clicked = cellBackground(); //size, q, r);
+    if (clicked) {
+        color = Color.red;
+    }
 
     ctx.save();
     defer ctx.restore();

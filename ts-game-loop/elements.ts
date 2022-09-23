@@ -43,7 +43,7 @@ export const cellBackground = (
 	ctx.fillStyle = cellBackgroundColor;
 	ctx.fill(hexagon);
 	let clicked = false;
-	if (frame.time === mouse?.timestamp && mouse?.buttons?.primary?.pressed) {
+	if (frame.time === mouse?.timestamp && mouse?.primary?.pressed) {
 		const [x, y] = mouse.position;
 		clicked = ctx.isPointInPath(hexagon, x, y);
 	}

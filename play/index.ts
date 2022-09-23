@@ -66,16 +66,18 @@ const pointerToCanvasSpace = ({ clientX, clientY }: PointerEvent): Position => {
 
 canvas.onpointerdown = (event) => {
 	const position = pointerToCanvasSpace(event);
-	mouse.buttons.primary.pressed = Boolean(event.buttons & 1);
-	mouse.buttons.secondary.pressed = Boolean(event.buttons & 2);
+	mouse.buttons = event.buttons;
+	mouse.primary.pressed = Boolean(event.buttons & 1);
+	mouse.secondary.pressed = Boolean(event.buttons & 2);
 	mouse.position = position;
 	mouse.timestamp = Infinity;
 	requestDraw();
 };
 canvas.onpointerup = (event) => {
 	const position = pointerToCanvasSpace(event);
-	mouse.buttons.primary.pressed = false;
-	mouse.buttons.secondary.pressed = false;
+	mouse.buttons = event.buttons;
+	mouse.primary.pressed = Boolean(event.buttons & 1);
+	mouse.secondary.pressed = Boolean(event.buttons & 2);
 	mouse.position = position;
 	mouse.timestamp = Infinity;
 	requestDraw();
@@ -102,21 +104,19 @@ type Button = {
 	pressed: boolean;
 };
 export type Mouse = {
-	buttons: {
-		primary: Button;
-		secondary: Button;
-	};
+	buttons: number;
+	primary: Button;
+	secondary: Button;
 	position: Position;
 	timestamp: number;
 };
 const mouse: Mouse = {
-	buttons: {
-		primary: {
-			pressed: false,
-		},
-		secondary: {
-			pressed: false,
-		},
+	buttons: 0,
+	primary: {
+		pressed: false,
+	},
+	secondary: {
+		pressed: false,
 	},
 	position: [0, 0],
 	timestamp: 0,
