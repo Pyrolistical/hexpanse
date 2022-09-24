@@ -110,6 +110,7 @@ fn maybeGameLoop() !void {
                 };
                 cell.*.orientation.animate = RotationDirection.clockwise;
                 cell.*.orientation.startTime = frame.time();
+                frame.next();
             }
         }
     }

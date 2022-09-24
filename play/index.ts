@@ -133,11 +133,11 @@ const requestDraw = () => {
 		return;
 	}
 	raf = requestAnimationFrame((time) => {
+		raf = undefined;
 		if (mouse.timestamp === Infinity) {
 			mouse.timestamp = time;
 		}
 		frame.time = time;
-		raf = undefined;
 
 		gameLoop();
 	});
